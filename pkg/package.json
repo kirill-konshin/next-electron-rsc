@@ -1,0 +1,19 @@
+{
+  "name": "next-pkg-app",
+  "version": "1.0.0",
+  "description": "demo",
+  "private": true,
+  "main": "build/index.js",
+  "scripts": {
+    "clean": "rm -rf build dist .tscache",
+    "move": "cp -r ../web/out ./out; cp-r ../web/.next ./.next",
+    "build": "yarn clean && yarn move && yarn build:ts && yarn build:packager --win && yarn build:packager --mac",
+    "build:fix": "node fixServer.js",
+    "build:pkg": "pkg .next/standalone --public --public-packages \"*\" --no-bytecode --compress=GZip"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "pkg": "^5.6.0",
+    "next-pkg-web": "1.0.0"
+  }
+}

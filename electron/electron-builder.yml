@@ -1,0 +1,27 @@
+appId: dj.dis.nextpkg
+productName: NextPKG
+
+directories:
+  output: dist
+  buildResources: assets
+
+files:
+  - filter:
+      - '**/*'
+      - '!electron-builder.js'
+      - '!package.json'
+      - assets
+
+#win:
+#  target:
+#    target: portable
+#    arch:
+#      - x64
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    target: zip
+    arch:
+      - arm64
+#      - x64

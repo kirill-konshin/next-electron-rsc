@@ -1,0 +1,38 @@
+{
+  "name": "next-pkg-app",
+  "version": "1.0.0",
+  "description": "demo",
+  "private": true,
+  "main": "build/index.js",
+  "scripts": {
+    "clean": "rm -rf build dist .tscache",
+    "deploy": "rm -rf ~/Applications/NextPKG.app && mv dist/mac-arm64/NextPKG.app ~/Applications",
+    "move": "cp -r ./node_modules/next-pkg-web/.next ./out",
+    "build": "yarn clean && yarn move && yarn build:ts && yarn build:packager",
+    "build:packager": "electron-builder --config electron-builder.yml",
+    "build:ts": "tsc --build .",
+    "start:electron": "electron .",
+    "start:ts": "yarn build:ts --watch --preserveWatchOutput",
+    "start": "yarn build:ts && cross-env NODE_ENV=development concurrently 'yarn:start:*'"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "electron-reload": "^2.0.0-alpha.1",
+    "next": "^13.0.2",
+    "next-pkg-common": "^1.0.0",
+    "next-pkg-web": "^1.0.0",
+    "node-static": "^0.7.11",
+    "resolve": "^1.22.1"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.23",
+    "@types/node-static": "^0",
+    "@types/react": "^17.0.43",
+    "@types/resolve": "^1",
+    "concurrently": "^7.0.0",
+    "cross-env": "^7.0.3",
+    "electron": "^21.2.2",
+    "electron-builder": "^23.6.0",
+    "typescript": "^4.6.3"
+  }
+}

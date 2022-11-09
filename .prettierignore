@@ -1,0 +1,6 @@
+.next
+.husky
+.yarn
+node_modules
+public
+stats
