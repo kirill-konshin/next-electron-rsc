@@ -5,12 +5,12 @@ directories:
   output: dist
   buildResources: assets
 
-files:
-  - filter:
-      - '**/*'
-      - '!electron-builder.js'
-      - '!package.json'
-      - assets
+asarUnpack: '**/*'
+asar: false
+
+extraResources:
+  from: out
+  to: app/out  # this preserves node_modules
 
 #win:
 #  target:
@@ -21,7 +21,7 @@ files:
 mac:
   category: public.app-category.developer-tools
   target:
-    target: zip
+    target: dir
     arch:
       - arm64
 #      - x64

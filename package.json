@@ -34,7 +34,8 @@
     "packages": [
       "web",
       "common",
-      "electron"
+      "electron",
+      "pkg"
     ]
   },
   "installConfig": {

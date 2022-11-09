@@ -7,7 +7,6 @@ import './api/random';
 
 const isDev = process.env['NODE_ENV'] === 'development';
 const appPath = app.getAppPath();
-const indexPath = path.resolve(appPath, 'out');
 const preload = path.resolve(__dirname, 'preload.js');
 const localhostUrl = 'http://localhost:3000';
 
@@ -27,15 +26,19 @@ const openDevTools = () => {
 };
 
 // if (!isDev) {
-const nextPath = path.join(__dirname, '..', 'out', '.next', 'standalone');
+const nextPath = path.join(__dirname, '..', 'out');
 
-const requireCwd = (name) => require(resolve.sync(name, { basedir: nextPath }));
+console.log({ __dirname, nextPath });
+
+const requireCwd = (name) => require(resolve.sync(name, { basedir: path.join(nextPath, 'standalone') }));
 
 const sandbox = {
     require: requireCwd,
-    __dirname: nextPath,
+    __dirname,
     process,
     console,
+    URL,
+    module: { exports: {} },
 };
 const data = fs.readFileSync(__dirname + '/server.js');
 vm.runInNewContext(data.toString(), sandbox);
@@ -64,20 +67,27 @@ const createWindow = async () => {
 
     // if (!isDev) {
     //     // https://github.com/sindresorhus/electron-serve
-    //     // https://stackoverflow.com/questions/52856299/youtube-videos-not-played-in-electron-app-but-in-a-website-does
-    //     protocol.interceptBufferProtocol('http', (request, callback) => {
-    //         if (request.url.includes(localhostUrl)) {
-    //             let fileUrl = request.url.replace(localhostUrl, '');
-    //             if (fileUrl === '/') {
-    //                 fileUrl = 'index.html';
-    //             }
-    //             return callback(fs.readFileSync(path.join(indexPath, fileUrl)));
-    //         }
-    //         fetch(request.url, request)
-    //             .then((res) => res.buffer())
-    //             .then(callback)
-    //             .catch(callback);
-    //     });
+    protocol.interceptBufferProtocol('http', async (request, callback) => {
+        if (request.url.includes(localhostUrl)) {
+            if (request.url.includes('/_next/')) {
+                console.log('STATIC', request.url);
+                return callback(
+                    fs.readFileSync(path.join(nextPath, 'static', request.url.split('/_next/static').pop()))
+                );
+            }
+
+            console.log('NEXT', request.url);
+
+            try {
+                const text = await sandbox.module.exports['handleRequest'](request);
+                console.log('NEXT SUCCESS');
+                callback(Buffer.from(text, 'utf-8'));
+            } catch (e) {
+                console.log('NEXT ERROR', e);
+                callback(e);
+            }
+        }
+    });
     // }
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {

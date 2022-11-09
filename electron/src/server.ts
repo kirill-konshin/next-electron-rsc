@@ -1,55 +1,63 @@
 const NextServer = require('next/dist/server/next-server').default;
-const http = require('http');
 const path = require('path');
 const fs = require('fs');
-const nodeStatic = require('node-static');
+const express = require('express');
+const request = require('supertest');
 
-// process.env.NODE_ENV = 'production';
-// process.chdir(__dirname)
+const nextPath = path.join(__dirname, '..', 'out');
+const { config: conf } = JSON.parse(fs.readFileSync(path.join(nextPath, 'required-server-files.json')).toString());
 
-// Make sure commands gracefully respect termination signals (e.g. from Docker)
-// Allow the graceful termination to be manually configurable
-if (!process.env.NEXT_MANUAL_SIG_HANDLE) {
-    process.on('SIGTERM', () => process.exit(0));
-    process.on('SIGINT', () => process.exit(0));
-}
+const nextServer = new NextServer({
+    dir: path.join(nextPath, 'standalone'),
+    dev: false,
+    customServer: false,
+    conf,
+});
 
-let handler;
+const handler = nextServer.getRequestHandler();
 
-const currentPort = parseInt(process.env.PORT, 10) || 3000;
-const staticServer = new nodeStatic.Server(path.join(__dirname, '..', 'static'));
-const { config } = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'required-server-files.json')).toString());
+const app = express();
+const token = Math.random().toString();
 
-const server = http.createServer(async (req, res) => {
-    if (req.url.includes('/_next/')) {
-        req.url = req.url.replace('/_next/static', '');
-        staticServer.serve(req, res);
-        return;
-    }
+const wrapRoute = (fn) => async (req, res, next) => {
     try {
-        if (!handler) throw new Error('Handler not defined');
+        await fn(req, res, next);
+    } catch (e) {
+        next(e);
+    }
+};
+
+app.get(
+    '*',
+    wrapRoute(async (req, res) => {
+        console.log('APP HANDLER', req.url);
+        if (req.headers.authorization !== token) {
+            throw new Error('Unauthorized');
+        }
         await handler(req, res);
-    } catch (err) {
-        console.error(err);
-        res.statusCode = 500;
-        res.end('internal server error');
+    })
+);
+
+app.use(function errorHandler(err, req, res, next) {
+    if (res.headersSent) {
+        return next(err);
     }
+    console.error('SERVER ERROR', err);
+    res.writeHead(500, 'Internal Server Error');
+    res.end();
 });
 
-server.listen(currentPort, (err) => {
-    if (err) {
-        console.error('Failed to start server', err);
-        process.exit(1);
-    }
-    const nextServer = new NextServer({
-        hostname: 'localhost',
-        port: currentPort,
-        dir: __dirname,
-        dev: false,
-        customServer: false,
-        conf: config,
+module.exports.handleRequest = async (req) =>
+    new Promise((resolve, reject) => {
+        const url = new URL(req.url);
+        request(app) // this opens a port
+            .get(url.pathname + url.search)
+            .set('Authorization', token)
+            .end((err, res) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(res.text);
+            });
     });
-    handler = nextServer.getRequestHandler();
-
-    console.log('Listening on port', currentPort, 'url: http://localhost:' + currentPort);
-});

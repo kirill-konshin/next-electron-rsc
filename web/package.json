@@ -4,6 +4,7 @@
   "description": "demo",
   "private": true,
   "main": "out-electron/index.js",
+  "bin": "server.js",
   "scripts": {
     "clean": "rm -rf .next out",
     "start": "next dev",
