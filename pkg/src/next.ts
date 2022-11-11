@@ -8,9 +8,9 @@ const standalonePath = path.join(nextPath, 'standalone');
 const configPath = path.join(nextPath, 'required-server-files.json');
 const staticPath = path.join(nextPath, 'static');
 
-console.log('Next.js Server Path', [nextPath, standalonePath, configPath, staticPath]);
+console.log('Next.js Paths', [nextPath, standalonePath, configPath, staticPath]);
 
-const requireCwd = (name) => require(require.resolve(name, { paths: [standalonePath] })); // custom resolve follows symlinks
+const requireCwd = (name) => require(resolve.sync(name, { basedir: standalonePath })); // custom resolve follows symlinks
 
 const { config } = JSON.parse(fs.readFileSync(configPath).toString());
 

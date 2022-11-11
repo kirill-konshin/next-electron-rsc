@@ -9,8 +9,8 @@ asarUnpack: '**/*'
 asar: false
 
 extraResources:
-  from: out
-  to: app/out  # this preserves node_modules
+  from: node_modules/next-pkg-web/.next
+  to: app/node_modules/next-pkg-web/.next # this preserves node_modules inside
 
 #win:
 #  target:
