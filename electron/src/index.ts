@@ -1,48 +1,35 @@
 import path from 'path';
-import fs from 'fs';
-import vm from 'vm';
-import resolve from 'resolve';
 import { app, BrowserWindow, globalShortcut, Menu, protocol, shell } from 'electron';
 import './api/random';
+import { processRequest, processStatic, startServer } from './next';
 
-const isDev = process.env['NODE_ENV'] === 'development';
+const isDev = process.env.NODE_ENV === 'development';
+const debugServer = true;
 const appPath = app.getAppPath();
 const preload = path.resolve(__dirname, 'preload.js');
 const localhostUrl = 'http://localhost:3000';
 
 let mainWindow;
 
-// if (isDev)
-//     require('electron-reload')(__dirname, {
-//         electron: path.join(__dirname, '..', 'node_modules', '.bin', 'electron'),
-//     });
+if (isDev)
+    require('electron-reload')(__dirname, {
+        electron: path.join(__dirname, '..', 'node_modules', '.bin', 'electron'),
+    });
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
+
+process.on('SIGTERM', () => process.exit(0));
+process.on('SIGINT', () => process.exit(0));
 
 const openDevTools = () => {
     mainWindow.setBounds({ width: 2000 });
     mainWindow.webContents.openDevTools();
 };
 
-// if (!isDev) {
-const nextPath = path.join(__dirname, '..', 'out');
-
-console.log({ __dirname, nextPath });
-
-const requireCwd = (name) => require(resolve.sync(name, { basedir: path.join(nextPath, 'standalone') }));
-
-const sandbox = {
-    require: requireCwd,
-    __dirname,
-    process,
-    console,
-    URL,
-    module: { exports: {} },
-};
-const data = fs.readFileSync(__dirname + '/server.js');
-vm.runInNewContext(data.toString(), sandbox);
-// }
+if (!isDev || debugServer) {
+    startServer();
+}
 
 const createWindow = async () => {
     mainWindow = new BrowserWindow({
@@ -65,30 +52,26 @@ const createWindow = async () => {
 
     mainWindow.on('closed', () => (mainWindow = null));
 
-    // if (!isDev) {
-    //     // https://github.com/sindresorhus/electron-serve
-    protocol.interceptBufferProtocol('http', async (request, callback) => {
-        if (request.url.includes(localhostUrl)) {
-            if (request.url.includes('/_next/')) {
-                console.log('STATIC', request.url);
-                return callback(
-                    fs.readFileSync(path.join(nextPath, 'static', request.url.split('/_next/static').pop()))
-                );
-            }
+    if (!isDev || debugServer) {
+        protocol.interceptBufferProtocol('http', async (request, callback) => {
+            if (request.url.includes(localhostUrl)) {
+                // https://github.com/sindresorhus/electron-serve
+                if (request.url.includes('/_next/')) {
+                    console.log('[NEXT] Static', request.url);
+                    return callback(processStatic(request));
+                }
 
-            console.log('NEXT', request.url);
-
-            try {
-                const text = await sandbox.module.exports['handleRequest'](request);
-                console.log('NEXT SUCCESS');
-                callback(Buffer.from(text, 'utf-8'));
-            } catch (e) {
-                console.log('NEXT ERROR', e);
-                callback(e);
+                try {
+                    const text = await processRequest(request);
+                    console.log('[NEXT] Success');
+                    callback(Buffer.from(text, 'utf-8'));
+                } catch (e) {
+                    console.log('[NEXT] Error', e);
+                    callback(e);
+                }
             }
-        }
-    });
-    // }
+        });
+    }
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         shell.openExternal(url).catch((e) => console.error(e));
@@ -174,7 +157,7 @@ const createWindow = async () => {
 
     await mainWindow.loadURL(localhostUrl);
 
-    console.log('Loaded', localhostUrl);
+    console.log('[APP] Loaded', localhostUrl);
 };
 
 app.on('ready', createWindow);

@@ -1,14 +1,13 @@
+import type { ProtocolRequest } from 'electron';
+
 const NextServer = require('next/dist/server/next-server').default;
-const path = require('path');
-const fs = require('fs');
 const express = require('express');
 const request = require('supertest');
 
-const nextPath = path.join(__dirname, '..', 'out');
-const { config: conf } = JSON.parse(fs.readFileSync(path.join(nextPath, 'required-server-files.json')).toString());
+const { config: conf, standalonePath: dir } = global as any;
 
 const nextServer = new NextServer({
-    dir: path.join(nextPath, 'standalone'),
+    dir,
     dev: false,
     customServer: false,
     conf,
@@ -30,7 +29,7 @@ const wrapRoute = (fn) => async (req, res, next) => {
 app.get(
     '*',
     wrapRoute(async (req, res) => {
-        console.log('APP HANDLER', req.url);
+        console.log('[SERVER] Handler', req.url);
         if (req.headers.authorization !== token) {
             throw new Error('Unauthorized');
         }
@@ -42,12 +41,12 @@ app.use(function errorHandler(err, req, res, next) {
     if (res.headersSent) {
         return next(err);
     }
-    console.error('SERVER ERROR', err);
+    console.error('[SERVER] Error', err);
     res.writeHead(500, 'Internal Server Error');
     res.end();
 });
 
-module.exports.handleRequest = async (req) =>
+exports.handleRequest = async (req: ProtocolRequest) =>
     new Promise((resolve, reject) => {
         const url = new URL(req.url);
         request(app) // this opens a port
