@@ -1,4 +1,4 @@
-import { ProtocolRequest } from 'electron';
+import type { ProtocolRequest, ProtocolResponse } from 'electron';
 import path from 'path';
 import resolve from 'resolve';
 import fs from 'fs';
@@ -30,7 +30,8 @@ export const startServer = () => {
     vm.runInNewContext(data.toString(), sandbox);
 };
 
-export const processRequest = async (request: ProtocolRequest) => await sandbox.exports['handleRequest'](request);
+export const processRequest = async (request: ProtocolRequest): Promise<ProtocolResponse> =>
+    await sandbox.exports['handleRequest'](request);
 
 export const processStatic = (request: ProtocolRequest) =>
     fs.readFileSync(path.join(staticPath, request.url.split('/_next/static').pop()));

@@ -12,6 +12,8 @@ export function useApi<T>(event: IpcEvents) {
     const [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
+        if (!api) return; // not in electron
+
         const unsubSuccess = api.receive(ipcSuccess(event), (data) => {
             setLoading(false);
             setData(data);
@@ -36,6 +38,7 @@ export function useApi<T>(event: IpcEvents) {
 
     const send = useCallback(
         (...args) => {
+            if (!api) return; // not in electron
             //TODO Erase data? Currently we just keep it
             setError(null);
             setLoading(true);

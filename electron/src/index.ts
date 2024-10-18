@@ -62,9 +62,9 @@ const createWindow = async () => {
                 }
 
                 try {
-                    const text = await processRequest(request);
+                    const response = await processRequest(request);
                     console.log('[NEXT] Success');
-                    callback(Buffer.from(text, 'utf-8'));
+                    callback(response);
                 } catch (e) {
                     console.log('[NEXT] Error', e);
                     callback(e);
