@@ -71,8 +71,9 @@ exports.handleRequest = async (origReq: ProtocolRequest): Promise<ProtocolRespon
                 if (!item.bytes) return;
                 req.push(item.bytes);
             });
-            req.push(null); // Indicate end of stream
         }
+
+        req.push(null);
 
         const res = new ReadableResponse(req);
 

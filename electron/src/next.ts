@@ -21,7 +21,7 @@ const sandbox = {
     console,
     URL,
     exports: {},
-    global: { config, nextPath, staticPath, Headers },
+    global: { config, nextPath, staticPath },
 };
 
 export const startServer = () => {
