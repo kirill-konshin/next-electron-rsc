@@ -2,97 +2,89 @@ import type { ProtocolRequest, ProtocolResponse } from 'electron';
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { Socket } from 'node:net';
 import { Buffer } from 'node:buffer';
+import resolve from 'resolve';
 import { parse } from 'url';
 
-const NextServer = require('next/dist/server/next-server').default;
-
-const { config: conf, nextPath: dir } = global as any;
-
-const hostname = 'localhost';
-const port = 3000;
-
-const nextServer = new NextServer({
-    dir,
-    dev: false,
-    customServer: false,
-    conf,
-    hostname,
-    port,
-});
-
-const handler = nextServer.getRequestHandler();
-
 class ReadableResponse extends ServerResponse {
-    _chunks = [];
+    private chunks = [];
+    promiseResolvers = (Promise as any).withResolvers();
 
     constructor(socket: IncomingMessage) {
         super(socket);
     }
 
-    _appendChunk(chunk: string | Buffer) {
-        if (chunk) this._chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    private appendChunk(chunk: string | Buffer) {
+        if (chunk) this.chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
     }
 
     write(chunk: any, ...args: any[]) {
-        this._appendChunk(chunk);
+        this.appendChunk(chunk);
         return super.write(chunk, ...args);
     }
 
     end(chunk: any, ...args: any[]) {
-        this._appendChunk(chunk);
+        this.appendChunk(chunk);
+        this.promiseResolvers.resolve();
         return super.end(chunk, ...args);
     }
 
     get body() {
-        return Buffer.concat(this._chunks);
+        return Buffer.concat(this.chunks);
     }
 }
 
-exports.handleRequest = async (origReq: ProtocolRequest): Promise<ProtocolResponse> => {
-    const url = new URL(origReq.url);
+export function createHandler({ config: conf, nextPath: dir }) {
+    const NextServer = require(resolve.sync('next/dist/server/next-server', { basedir: dir })).default;
 
-    const prefix = `[NEXT] Request [${url.pathname}]`;
+    const app = new NextServer({
+        dir,
+        dev: false,
+        customServer: false,
+        conf,
+    });
 
-    console.log(prefix);
+    const handler = app.getRequestHandler();
 
-    const socket = new Socket({ readable: true, writable: true });
+    const preparePromise = app.prepare();
 
-    try {
-        const socket = new Socket({ readable: true, writable: true });
+    return async (origReq: ProtocolRequest): Promise<ProtocolResponse> => {
+        let socket;
+        try {
+            await preparePromise;
 
-        const req = new IncomingMessage(socket);
+            const url = new URL(origReq.url);
 
-        req.url = url.pathname + url.search;
-        req.method = origReq.method;
-        req.headers = origReq.headers;
+            socket = new Socket({ readable: true, writable: true });
 
-        if (origReq.uploadData) {
-            origReq.uploadData.forEach((item) => {
+            const req = new IncomingMessage(socket);
+
+            req.url = url.pathname + url.search;
+            req.method = origReq.method;
+            req.headers = origReq.headers;
+
+            origReq.uploadData?.forEach((item) => {
                 if (!item.bytes) return;
                 req.push(item.bytes);
             });
+
+            req.push(null);
+
+            const res = new ReadableResponse(req);
+
+            handler(req, res, parse(req.url, true));
+
+            await res.promiseResolvers.promise;
+
+            return {
+                statusCode: res.statusCode,
+                mimeType: res.getHeader('content-type').toString().split(';')[0] as any,
+                data: res.body,
+                headers: res.getHeaders() as any,
+            };
+        } catch (e) {
+            return e;
+        } finally {
+            socket?.end();
         }
-
-        req.push(null);
-
-        const res = new ReadableResponse(req);
-
-        const parsedUrl = parse(`http://${hostname}:${port}${req.url}`, true);
-
-        console.log(prefix, 'HANDLER CALL', parsedUrl);
-
-        await handler(req, res, parsedUrl);
-
-        console.log(prefix, 'BODY', res.body, res.getHeader('content-type'));
-
-        return {
-            statusCode: res.statusCode,
-            mimeType: res.getHeader('content-type').toString().split(';')[0] as any,
-            data: res.body,
-        };
-    } catch (e) {
-        return e;
-    } finally {
-        socket.end();
-    }
-};
+    };
+}

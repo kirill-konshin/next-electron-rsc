@@ -1,14 +1,14 @@
 import path from 'path';
 import { app, BrowserWindow, globalShortcut, Menu, protocol, shell } from 'electron';
 import './api/random';
-import { processRequest, processStatic, startServer } from './next';
+import { processRequest, processStatic } from './next';
 import defaultMenu from 'electron-default-menu';
 
 const isDev = process.env.NODE_ENV === 'development';
 const debugServer = true;
 const appPath = app.getAppPath();
 const preload = path.resolve(__dirname, 'preload.js');
-const localhostUrl = 'http://localhost:3000';
+const localhostUrl = 'http://localhost';
 
 let mainWindow;
 
@@ -27,10 +27,6 @@ const openDevTools = () => {
     mainWindow.setBounds({ width: 2000 });
     mainWindow.webContents.openDevTools();
 };
-
-if (!isDev || debugServer) {
-    startServer();
-}
 
 const createWindow = async () => {
     mainWindow = new BrowserWindow({
