@@ -5,7 +5,8 @@ import fs from 'fs';
 
 import { createHandler } from './server';
 
-const packagePath = path.dirname(resolve.sync('next-pkg-web')); //FIXME custom resolve follows symlinks ../.. due to standalone/web
+const packagePath = path.dirname(resolve.sync('next-pkg-web'));
+
 const nextPath = path.join(packagePath, '.next', 'standalone', 'web');
 const configPath = path.join(nextPath, '.next', 'required-server-files.json');
 const staticPath = path.join(packagePath, '.next', 'static');

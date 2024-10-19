@@ -60,7 +60,7 @@ const createWindow = async () => {
 
                 try {
                     const response = await processRequest(request);
-                    console.log('[NEXT] Success');
+                    console.log('[NEXT] Success', request.url, response.statusCode, response.mimeType);
                     callback(response);
                 } catch (e) {
                     console.log('[NEXT] Error', e);

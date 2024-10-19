@@ -1,20 +1,20 @@
 import type { ProtocolRequest, ProtocolResponse } from 'electron';
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { Socket } from 'node:net';
-import { Buffer } from 'node:buffer';
 import resolve from 'resolve';
 import { parse } from 'url';
 
-class ReadableResponse extends ServerResponse {
-    private chunks = [];
-    promiseResolvers = (Promise as any).withResolvers();
+class ReadableServerResponse extends ServerResponse {
+    private chunks: Buffer[] = [];
+    private promiseResolvers = Promise.withResolvers<Buffer>();
 
     constructor(socket: IncomingMessage) {
         super(socket);
     }
 
     private appendChunk(chunk: string | Buffer) {
-        if (chunk) this.chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+        if (!chunk) return;
+        this.chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
     }
 
     write(chunk: any, ...args: any[]) {
@@ -24,37 +24,33 @@ class ReadableResponse extends ServerResponse {
 
     end(chunk: any, ...args: any[]) {
         this.appendChunk(chunk);
-        this.promiseResolvers.resolve();
+        this.promiseResolvers.resolve(Buffer.concat(this.chunks));
         return super.end(chunk, ...args);
     }
 
-    get body() {
-        return Buffer.concat(this.chunks);
+    get data() {
+        return this.promiseResolvers.promise;
     }
 }
 
 export function createHandler({ config: conf, nextPath: dir }) {
     const NextServer = require(resolve.sync('next/dist/server/next-server', { basedir: dir })).default;
 
-    const app = new NextServer({
-        dir,
-        dev: false,
-        customServer: false,
-        conf,
-    });
+    const app = new NextServer({ dir, conf });
 
     const handler = app.getRequestHandler();
 
     const preparePromise = app.prepare();
 
     return async (origReq: ProtocolRequest): Promise<ProtocolResponse> => {
-        let socket;
+        let socket: Socket;
+
         try {
             await preparePromise;
 
-            const url = new URL(origReq.url);
+            const url = parse(origReq.url, true);
 
-            socket = new Socket({ readable: true, writable: true });
+            socket = new Socket();
 
             const req = new IncomingMessage(socket);
 
@@ -69,16 +65,17 @@ export function createHandler({ config: conf, nextPath: dir }) {
 
             req.push(null);
 
-            const res = new ReadableResponse(req);
+            const res = new ReadableServerResponse(req);
 
-            handler(req, res, parse(req.url, true));
+            handler(req, res, url);
 
-            await res.promiseResolvers.promise;
+            // Wait for the response to be fully written to read headers
+            const data = await res.data;
 
             return {
                 statusCode: res.statusCode,
-                mimeType: res.getHeader('content-type').toString().split(';')[0] as any,
-                data: res.body,
+                mimeType: res.getHeader('Content-Type').toString().split(';')[0] as any,
+                data,
                 headers: res.getHeaders() as any,
             };
         } catch (e) {
