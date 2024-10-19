@@ -2,6 +2,7 @@ import path from 'path';
 import { app, BrowserWindow, globalShortcut, Menu, protocol, shell } from 'electron';
 import './api/random';
 import { processRequest, processStatic, startServer } from './next';
+import defaultMenu from 'electron-default-menu';
 
 const isDev = process.env.NODE_ENV === 'development';
 const debugServer = true;
@@ -78,78 +79,8 @@ const createWindow = async () => {
         return { action: 'deny' };
     });
 
-    const createMenu = (dev) =>
-        Menu.setApplicationMenu(
-            Menu.buildFromTemplate(
-                [
-                    {
-                        label: 'Application',
-                        submenu: [
-                            {
-                                label: 'Quit',
-                                accelerator: 'Command+Q',
-                                click: () => app.quit(),
-                            },
-                        ],
-                    },
-                    {
-                        label: 'Edit',
-                        submenu: [
-                            {
-                                label: 'Undo',
-                                accelerator: 'CmdOrCtrl+Z',
-                                selector: 'undo:',
-                            },
-                            {
-                                label: 'Redo',
-                                accelerator: 'Shift+CmdOrCtrl+Z',
-                                selector: 'redo:',
-                            },
-                            { type: 'separator' },
-                            {
-                                label: 'Cut',
-                                accelerator: 'CmdOrCtrl+X',
-                                selector: 'cut:',
-                            },
-                            {
-                                label: 'Copy',
-                                accelerator: 'CmdOrCtrl+C',
-                                selector: 'copy:',
-                            },
-                            {
-                                label: 'Paste',
-                                accelerator: 'CmdOrCtrl+V',
-                                selector: 'paste:',
-                            },
-                            {
-                                label: 'Select All',
-                                accelerator: 'CmdOrCtrl+A',
-                                selector: 'selectAll:',
-                            },
-                        ],
-                    },
-                    dev
-                        ? {
-                              label: 'Developer',
-                              submenu: [
-                                  {
-                                      label: 'Open Dev Tools',
-                                      accelerator: 'CmdOrCtrl+Alt+J',
-                                      click: openDevTools,
-                                  },
-                              ],
-                          }
-                        : null,
-                ].filter(Boolean) as any
-            )
-        );
-
-    globalShortcut.register('CommandOrControl+Shift+D', () => {
-        console.log('Dev Menu enabled');
-        createMenu(true);
-    });
-
-    createMenu(isDev);
+    const menu = defaultMenu(app, shell);
+    Menu.setApplicationMenu(Menu.buildFromTemplate(menu));
 
     // Should be last, after all listeners and menu
 

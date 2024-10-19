@@ -11,7 +11,7 @@ export default function Index({ foo }) {
     }, [send]);
 
     useEffect(() => {
-        fetch('/api/test')
+        fetch('/api/test', { method: 'POST', body: 'Hello from frontend!' })
             .then((res) => res.text())
             .then((text) => setTest(text));
     }, []);

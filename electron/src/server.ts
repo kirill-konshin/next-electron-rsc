@@ -6,13 +6,18 @@ import { parse } from 'url';
 
 const NextServer = require('next/dist/server/next-server').default;
 
-const { config: conf, standalonePath: dir } = global as any;
+const { config: conf, nextPath: dir } = global as any;
+
+const hostname = 'localhost';
+const port = 3000;
 
 const nextServer = new NextServer({
     dir,
     dev: false,
     customServer: false,
     conf,
+    hostname,
+    port,
 });
 
 const handler = nextServer.getRequestHandler();
@@ -71,7 +76,7 @@ exports.handleRequest = async (origReq: ProtocolRequest): Promise<ProtocolRespon
 
         const res = new ReadableResponse(req);
 
-        const parsedUrl = parse('http://localhost:3000' + req.url, true);
+        const parsedUrl = parse(`http://${hostname}:${port}${req.url}`, true);
 
         console.log(prefix, 'HANDLER CALL', parsedUrl);
 
