@@ -5205,6 +5205,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"next-electron-demo@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "next-electron-demo@workspace:."
+  dependencies:
+    cross-env: "npm:^7.0.3"
+    eslint: "npm:^8.57.1"
+    eslint-config-next: "npm:^14.2.15"
+    eslint-config-prettier: "npm:^9.1.0"
+    husky: "npm:^9.1.6"
+    lint-staged: "npm:^15.2.10"
+    next: "npm:^14.2.15"
+    prettier: "npm:^3.3.3"
+    typescript: "npm:^5.6.3"
+  languageName: unknown
+  linkType: soft
+
 "next-pkg-app@workspace:electron":
   version: 0.0.0-use.local
   resolution: "next-pkg-app@workspace:electron"
@@ -5216,20 +5232,10 @@ __metadata:
     electron-builder: "npm:^25.1.8"
     electron-default-menu: "npm:^1.0.2"
     electron-reload: "npm:^2.0.0-alpha.1"
-    next-pkg-common: "npm:^1.0.0"
     next-pkg-web: "npm:^1.0.0"
     node-static: "npm:^0.7.11"
     resolve: "npm:^1.22.8"
     tsc-watch: "npm:^6.2.0"
-    typescript: "npm:^5.6.3"
-    url: "npm:^0.11.4"
-  languageName: unknown
-  linkType: soft
-
-"next-pkg-common@npm:^1.0.0, next-pkg-common@workspace:common":
-  version: 0.0.0-use.local
-  resolution: "next-pkg-common@workspace:common"
-  dependencies:
     typescript: "npm:^5.6.3"
   languageName: unknown
   linkType: soft
@@ -5258,7 +5264,6 @@ __metadata:
     "@types/node": "npm:^22.7.6"
     "@types/react": "npm:^18.3.11"
     next: "npm:^14.2.15"
-    next-pkg-common: "npm:^1.0.0"
     react: "npm:^18.3.1"
     react-dom: "npm:^18.3.1"
     typescript: "npm:^5.6.3"
@@ -6062,13 +6067,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"punycode@npm:^1.4.1":
-  version: 1.4.1
-  resolution: "punycode@npm:1.4.1"
-  checksum: 10/af2700dde1a116791ff8301348ff344c47d6c224e875057237d1b5112035655fb07a6175cfdb8bf0e3a8cdfd2dc82b3a622e0aefd605566c0e949a6d0d1256a4
-  languageName: node
-  linkType: hard
-
 "punycode@npm:^2.1.0":
   version: 2.1.1
   resolution: "punycode@npm:2.1.1"
@@ -6076,7 +6074,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"qs@npm:6.13.0, qs@npm:^6.12.3":
+"qs@npm:6.13.0":
   version: 6.13.0
   resolution: "qs@npm:6.13.0"
   dependencies:
@@ -6131,22 +6129,6 @@ __metadata:
   checksum: 10/5c4d72ae7eec44357171585938c85ce066da8ca79146b5635baf3d55d74584c92575fa4e2c9eac03efbed3b46a0b2e7c30634c012b4b4fa40d654353d3c163eb
   languageName: node
   linkType: hard
-
-"rcv-andon@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "rcv-andon@workspace:."
-  dependencies:
-    cross-env: "npm:^7.0.3"
-    eslint: "npm:^8.57.1"
-    eslint-config-next: "npm:^14.2.15"
-    eslint-config-prettier: "npm:^9.1.0"
-    husky: "npm:^9.1.6"
-    lint-staged: "npm:^15.2.10"
-    next: "npm:^14.2.15"
-    prettier: "npm:^3.3.3"
-    typescript: "npm:^5.6.3"
-  languageName: unknown
-  linkType: soft
 
 "react-dom@npm:^18.3.1":
   version: 18.3.1
@@ -7549,16 +7531,6 @@ __metadata:
   dependencies:
     punycode: "npm:^2.1.0"
   checksum: 10/b271ca7e3d46b7160222e3afa3e531505161c9a4e097febae9664e4b59912f4cbe94861361a4175edac3a03fee99d91e44b6a58c17a634bc5a664b19fc76fbcb
-  languageName: node
-  linkType: hard
-
-"url@npm:^0.11.4":
-  version: 0.11.4
-  resolution: "url@npm:0.11.4"
-  dependencies:
-    punycode: "npm:^1.4.1"
-    qs: "npm:^6.12.3"
-  checksum: 10/e787d070f0756518b982a4653ef6cdf4d9030d8691eee2d483344faf2b530b71d302287fa63b292299455fea5075c502a5ad5f920cb790e95605847f957a65e4
   languageName: node
   linkType: hard
 

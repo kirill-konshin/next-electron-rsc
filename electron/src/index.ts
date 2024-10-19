@@ -1,14 +1,12 @@
 import path from 'path';
-import { app, BrowserWindow, globalShortcut, Menu, protocol, shell } from 'electron';
-import './api/random';
-import { processRequest, processStatic } from './next';
+import { app, BrowserWindow, Menu, protocol, shell } from 'electron';
 import defaultMenu from 'electron-default-menu';
+import { processRequest, processStatic } from './next';
 
 const isDev = process.env.NODE_ENV === 'development';
 const debugServer = true;
 const appPath = app.getAppPath();
-const preload = path.resolve(__dirname, 'preload.js');
-const localhostUrl = 'http://localhost';
+const localhostUrl = 'http://localhost:3000'; // must match Next.js dev server
 
 let mainWindow;
 
@@ -31,17 +29,11 @@ const openDevTools = () => {
 const createWindow = async () => {
     mainWindow = new BrowserWindow({
         width: isDev ? 2000 : 1000,
-        height: 1200, //FIXME Airs?
+        height: 800,
         icon: path.resolve(appPath, 'assets/icon.png'),
-        // titleBarStyle: 'hidden', // Can't move with hidden
         webPreferences: {
-            nodeIntegration: false, // is default value after Electron v5
-            nodeIntegrationInWorker: true,
             contextIsolation: true, // protect against prototype pollution
-            // enableRemoteModule: false, // turn off remote
-            webSecurity: false,
             devTools: true,
-            preload,
         },
     });
 
