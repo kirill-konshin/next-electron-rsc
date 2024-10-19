@@ -3,14 +3,13 @@ import resolve from 'resolve';
 import fs from 'fs';
 import vm from 'vm';
 
-const nextPath = path.resolve(path.dirname(resolve.sync('next-pkg-web')), '..'); // custom resolve follows symlinks
-const standalonePath = path.join(nextPath, 'standalone');
-const configPath = path.join(nextPath, 'required-server-files.json');
-const staticPath = path.join(nextPath, 'static');
+const nextPath = path.resolve(path.dirname(resolve.sync('next-pkg-web'))); // custom resolve follows symlinks
+const configPath = path.join(nextPath, '.next', 'required-server-files.json');
+const staticPath = path.join(nextPath, '.next', 'static');
 
-console.log('Next.js Paths', [nextPath, standalonePath, configPath, staticPath]);
+console.log('Next.js Paths', [nextPath, configPath, staticPath, process.version]);
 
-const requireCwd = (name) => require(resolve.sync(name, { basedir: standalonePath })); // custom resolve follows symlinks
+const requireCwd = (name) => require(resolve.sync(name, { basedir: nextPath })); // custom resolve follows symlinks
 
 const { config } = JSON.parse(fs.readFileSync(configPath).toString());
 
@@ -21,7 +20,7 @@ const sandbox = {
     console,
     URL,
     exports: {},
-    global: { config, standalonePath, staticPath },
+    global: { config, nextPath, staticPath },
 };
 
 export const startServer = () => {

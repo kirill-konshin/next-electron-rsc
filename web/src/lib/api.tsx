@@ -44,7 +44,7 @@ export function useApi<T>(event: IpcEvents) {
             setLoading(true);
             api.send(event, ...args);
         },
-        [event]
+        [event],
     );
 
     return { send, error, data, loading, reset };

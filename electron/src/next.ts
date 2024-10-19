@@ -8,7 +8,7 @@ const nextPath = path.dirname(resolve.sync('next-pkg-web')); //FIXME custom reso
 const configPath = path.join(nextPath, '.next', 'required-server-files.json');
 const staticPath = path.join(nextPath, '.next', 'static');
 
-console.log('Next.js Paths', [nextPath, nextPath, configPath, staticPath], Headers);
+console.log('Next.js Paths', [nextPath, configPath, staticPath]);
 
 const requireCwd = (name) => require(resolve.sync(name, { basedir: nextPath })); // custom resolve follows symlinks
 
