@@ -1,4 +1,4 @@
-import { Protocol, ProtocolRequest, ProtocolResponse } from 'electron';
+import type { Protocol, ProtocolRequest, ProtocolResponse } from 'electron';
 import type { NextConfig } from 'next';
 
 import { IncomingMessage, ServerResponse } from 'node:http';
@@ -58,11 +58,27 @@ function createRequest({ socket, origReq }: { socket: Socket; origReq: ProtocolR
     return req;
 }
 
+async function createProtocolResponse(res: ReadableServerResponse): Promise<ProtocolResponse> {
+    // Wait for the response to be fully written to read headers
+    const data = await res.data;
+
+    return {
+        statusCode: res.statusCode,
+        mimeType: res.getHeader('Content-Type') as any,
+        headers: res.getHeaders() as any,
+        data,
+    };
+}
+
 /**
- * @param standaloneDir
- * @param staticDir
- * @param localhostUrl
- * @param protocol
+ * https://github.com/vercel/next.js/pull/68167/files#diff-d0d8b7158bcb066cdbbeb548a29909fe8dc4e98f682a6d88654b1684e523edac
+ * https://github.com/vercel/next.js/blob/canary/examples/custom-server/server.ts
+ *
+ * @param {string} standaloneDir
+ * @param {string} staticDir
+ * @param {string} localhostUrl
+ * @param {import('electron').Protocol} protocol
+ * @param {boolean} debug
  */
 export function createHandler({
     standaloneDir,
@@ -107,21 +123,13 @@ export function createHandler({
 
             handler(req, res, url);
 
-            // Wait for the response to be fully written to read headers
-            const data = await res.data;
-
-            return {
-                statusCode: res.statusCode,
-                mimeType: res.getHeader('Content-Type') as any, // .toString().split(';')[0]
-                headers: res.getHeaders() as any,
-                data,
-            };
+            return await createProtocolResponse(res);
         } catch (e) {
             return e;
         }
     }
 
-    function handleStatic(request: ProtocolRequest): ProtocolResponse | Buffer {
+    function handleStatic(request: ProtocolRequest): Buffer {
         if (!request.url.startsWith(localhostUrl + staticPrefx)) throw new Error('Invalid URL');
 
         const filePath = path.join(

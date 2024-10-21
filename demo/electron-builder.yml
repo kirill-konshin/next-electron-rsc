@@ -1,5 +1,5 @@
-appId: org.konshin.nextpkg
-productName: NextPKG
+appId: org.konshin.nextelectronrsc
+productName: Next Electron RSC
 
 directories:
   output: dist

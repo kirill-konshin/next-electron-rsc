@@ -1,10 +1,13 @@
 {
   "name": "next-electron-rsc",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Next.js + Electron + React RSC",
-  "private": true,
   "main": "build/index.js",
+  "main:src": "build/index.tsx",
+  "source": "src/index.tsx",
   "types": "build/index.d.ts",
+  "x-module": "build/index.js",
+  "x-jsnext:main": "build/index.js",
   "scripts": {
     "clean": "rm -rf build .tscache",
     "build": "tsc --build .",
@@ -22,5 +25,18 @@
     "electron": "^33.0.1",
     "next": "^14.2.15",
     "typescript": "^5.6.3"
-  }
+  },
+  "peerDependencies": {
+    "next": ">=14",
+    "electron": ">=30"
+  },
+  "author": "Kirill Konshin",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/kirill-konshin/next-electron-rsc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kirill-konshin/next-electron-rsc/issues"
+  },
+  "homepage": "https://github.com/kirill-konshin/next-electron-rsc"
 }
