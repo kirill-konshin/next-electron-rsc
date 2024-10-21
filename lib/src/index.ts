@@ -71,6 +71,7 @@ async function createProtocolResponse(res: ReadableServerResponse): Promise<Prot
 }
 
 /**
+ * https://nextjs.org/docs/pages/building-your-application/configuring/custom-server
  * https://github.com/vercel/next.js/pull/68167/files#diff-d0d8b7158bcb066cdbbeb548a29909fe8dc4e98f682a6d88654b1684e523edac
  * https://github.com/vercel/next.js/blob/canary/examples/custom-server/server.ts
  *
