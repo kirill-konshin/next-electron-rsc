@@ -1,8 +1,6 @@
 import type { ProtocolRequest, ProtocolResponse } from 'electron';
 import path from 'path';
 import resolve from 'resolve';
-import fs from 'fs';
-import { parse } from 'url';
 
 import { createHandler } from './server';
 
@@ -20,5 +18,10 @@ const handleRequest = createHandler({ config, nextPath });
 
 export const processRequest = async (request: ProtocolRequest): Promise<ProtocolResponse> => handleRequest(request);
 
-export const processStatic = (request: ProtocolRequest) =>
-    fs.readFileSync(path.join(staticPath, parse(request.url).pathname.replace('/_next/static', '')));
+export const processStatic = (request: ProtocolRequest) => {
+    if (request.url.startsWith('./') || request.url.startsWith('../')) throw new Error('Invalid URL');
+
+    return {
+        path: path.join(staticPath, decodeURIComponent(new URL(request.url).pathname).replace('/_next/static', '')),
+    };
+};

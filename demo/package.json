@@ -1,0 +1,37 @@
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "description": "demo",
+  "private": true,
+  "main": "build/index.js",
+  "scripts": {
+    "clean": "rm -rf build dist .tscache .next out",
+    "build": "yarn clean && yarn build:next yarn build:ts && yarn build:packager",
+    "build:ts": "tsc --project tsconfig-electron.json",
+    "build:packager": "electron-builder --config electron-builder.yml",
+    "build:next": "next build",
+    "start:electron": "electron .",
+    "start:ts": "tsc-watch --noClear --onFirstSuccess \"yarn start:electron\" --project tsconfig-electron.json",
+    "start:next": "next dev",
+    "start": "cross-env NODE_ENV=development yarn start:ts",
+    "open": "open dist/mac-arm64/NextPKG.app/Contents/MacOS/NextPKG"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "electron-default-menu": "^1.0.2",
+    "electron-reload": "^2.0.0-alpha.1",
+    "next-electron-rsc": "*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.6",
+    "@types/react": "^18.3.11",
+    "cross-env": "^7.0.3",
+    "electron": "^33.0.1",
+    "electron-builder": "^25.1.8",
+    "next": "^14.2.15",
+    "tsc-watch": "^6.2.0",
+    "typescript": "^5.6.3"
+  }
+}
