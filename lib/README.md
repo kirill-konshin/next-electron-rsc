@@ -37,6 +37,11 @@ Configure your Next.js build in `next.config.js`:
 ```js
 module.exports = {
   output: 'standalone',
+  experimental: {
+    outputFileTracingIncludes: {
+      '*': ['public/**/*', '.next/static/**/*'],
+    },
+  },
 };
 ```
 
@@ -51,8 +56,6 @@ files:
   - '!tsconfig*'
 
 extraResources:
-  - from: .next/static
-    to: app/.next/static
   - from: .next/standalone/%YOUR_PACKAGE_NAME_IN_PACKAGE.JSON%
     to: app/.next/standalone/%YOUR_PACKAGE_NAME_IN_PACKAGE.JSON%
 ```

@@ -6,7 +6,7 @@ import { createHandler } from 'next-electron-rsc';
 const isDev = process.env.NODE_ENV === 'development';
 const debugServer = !!process.env.DEBUG_SERVER;
 const appPath = app.getAppPath();
-const localhostUrl = 'http://localhost:3000'; // must match Next.js dev server
+const localhostUrl = 'http://localhost:666'; // must match Next.js dev server
 
 let mainWindow;
 
@@ -39,11 +39,9 @@ const createWindow = async () => {
     // Next.js handler
 
     const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
-    const staticDir = path.join(appPath, '.next', 'static');
 
     const { createInterceptor } = createHandler({
         standaloneDir,
-        staticDir,
         localhostUrl,
         protocol,
         debug: true,
@@ -68,7 +66,7 @@ const createWindow = async () => {
 
     await app.whenReady();
 
-    await mainWindow.loadURL(localhostUrl);
+    await mainWindow.loadURL(localhostUrl + '/');
 
     console.log('[APP] Loaded', localhostUrl);
 };

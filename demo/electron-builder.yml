@@ -17,10 +17,8 @@ files:
   - '!tsconfig*'
 
 extraResources:
-  - from: .next/static
-    to: app/.next/static # this preserves node_modules inside
   - from: .next/standalone/demo
-    to: app/.next/standalone/demo # this preserves node_modules inside
+    to: app/.next/standalone/demo # this preserves node_modules inside, this assumes static was already copied after Next.js build
 
 #win:
 #  target:

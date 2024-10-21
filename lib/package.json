@@ -1,6 +1,6 @@
 {
   "name": "next-electron-rsc",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Next.js + Electron + React RSC",
   "main": "build/index.js",
   "main:src": "build/index.tsx",
@@ -27,8 +27,8 @@
     "typescript": "^5.6.3"
   },
   "peerDependencies": {
-    "next": ">=14",
-    "electron": ">=30"
+    "electron": ">=30",
+    "next": ">=14"
   },
   "author": "Kirill Konshin",
   "repository": {
