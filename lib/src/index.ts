@@ -58,40 +58,52 @@ function createRequest({ socket, origReq }: { socket: Socket; origReq: ProtocolR
     return req;
 }
 
+/**
+ * @param standaloneDir
+ * @param staticDir
+ * @param localhostUrl
+ * @param protocol
+ */
 export function createHandler({
-    config,
-    nextPath,
-    staticPath,
+    standaloneDir,
+    staticDir,
     localhostUrl = 'http://localhost:3000',
     protocol,
+    debug = false,
 }: {
-    config: NextConfig;
-    nextPath: string;
-    staticPath: string;
+    standaloneDir: string;
+    staticDir: string;
     localhostUrl: string;
     protocol: Protocol;
+    debug?: boolean;
 }) {
-    const NextServer = require(resolve.sync('next/dist/server/next-server', { basedir: nextPath })).default;
+    const NextServer = require(resolve.sync('next/dist/server/next-server', { basedir: standaloneDir })).default;
 
-    const app = new NextServer({ dir: nextPath, conf: config });
+    const config = require(path.join(standaloneDir, '.next', 'required-server-files.json')).config as NextConfig;
+
+    const app = new NextServer({
+        dir: standaloneDir,
+        conf: config,
+        minimalMode: true,
+    });
 
     const handler = app.getRequestHandler();
 
     const preparePromise = app.prepare();
 
-    async function handleRequest(origReq: ProtocolRequest): Promise<ProtocolResponse> {
-        let socket: Socket;
+    const socket = new Socket();
 
+    //TODO Return function to close socket
+    process.on('SIGTERM', () => socket.end());
+    process.on('SIGINT', () => socket.end());
+
+    async function handleRequest(origReq: ProtocolRequest): Promise<ProtocolResponse> {
         try {
             await preparePromise;
 
-            const url = parse(origReq.url, true);
-
-            socket = new Socket();
-
             const req = createRequest({ socket, origReq });
-
             const res = new ReadableServerResponse(req);
+            const url = parse(origReq.url, true);
 
             handler(req, res, url);
 
@@ -100,14 +112,12 @@ export function createHandler({
 
             return {
                 statusCode: res.statusCode,
-                mimeType: res.getHeader('Content-Type').toString().split(';')[0] as any,
-                data,
+                mimeType: res.getHeader('Content-Type') as any, // .toString().split(';')[0]
                 headers: res.getHeaders() as any,
+                data,
             };
         } catch (e) {
             return e;
-        } finally {
-            socket?.end();
         }
     }
 
@@ -115,13 +125,13 @@ export function createHandler({
         if (!request.url.startsWith(localhostUrl + staticPrefx)) throw new Error('Invalid URL');
 
         const filePath = path.join(
-            staticPath,
+            staticDir,
             decodeURIComponent(parse(request.url, false).pathname).replace(staticPrefx, ''),
         );
 
         if (!fs.existsSync(filePath)) throw new Error('File not found');
 
-        // return {path: filePath}; //FIXME: This is not working
+        // return {path: filePath}; //FIXME This is not working in interceptBufferProtocol
         return fs.readFileSync(filePath);
     }
 
@@ -131,20 +141,20 @@ export function createHandler({
 
             if (request.url.includes(staticPrefx)) {
                 const response = handleStatic(request);
-                console.log('[NEXT] Static', response);
+                if (debug) console.log('[NEXT] Static', request.url);
                 return callback(response);
             }
 
             try {
                 const response = await handleRequest(request);
-                console.log('[NEXT] Handler', request.url, response.statusCode, response.mimeType);
+                if (debug) console.log('[NEXT] Handler', request.url, response.statusCode, response.mimeType);
                 callback(response);
             } catch (e) {
-                console.log('[NEXT] Error', e);
+                if (debug) console.log('[NEXT] Error', e);
                 callback(e);
             }
         });
     }
 
-    return { handleRequest, handleStatic, createInterceptor };
+    return { createInterceptor };
 }

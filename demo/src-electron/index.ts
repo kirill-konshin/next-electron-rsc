@@ -4,16 +4,11 @@ import defaultMenu from 'electron-default-menu';
 import { createHandler } from 'next-electron-rsc';
 
 const isDev = process.env.NODE_ENV === 'development';
-const debugServer = true;
+const debugServer = !!process.env.DEBUG_SERVER;
 const appPath = app.getAppPath();
 const localhostUrl = 'http://localhost:3000'; // must match Next.js dev server
 
 let mainWindow;
-
-if (isDev)
-    require('electron-reload')(__dirname, {
-        electron: path.join(__dirname, '..', 'node_modules', '.bin', 'electron'),
-    });
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
@@ -43,21 +38,21 @@ const createWindow = async () => {
 
     // Next.js handler
 
-    const rootPath = app.getAppPath();
-
-    const nextPath = path.join(rootPath, '.next', 'standalone', 'demo');
-    const configPath = path.join(rootPath, '.next', 'required-server-files.json');
-    const staticPath = path.join(rootPath, '.next', 'static');
+    const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
+    const staticDir = path.join(appPath, '.next', 'static');
 
     const { createInterceptor } = createHandler({
-        config: require(configPath).config,
-        nextPath,
-        staticPath,
+        standaloneDir,
+        staticDir,
         localhostUrl,
         protocol,
+        debug: true,
     });
 
-    if (!isDev || debugServer) createInterceptor();
+    if (!isDev || debugServer) {
+        if (debugServer) console.log(`[APP] Server Debugging Enabled, ${localhostUrl} will be intercepted`);
+        createInterceptor();
+    }
 
     // Next.js handler
 

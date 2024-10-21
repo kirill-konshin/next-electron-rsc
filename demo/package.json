@@ -6,20 +6,19 @@
   "main": "build/index.js",
   "scripts": {
     "clean": "rm -rf build dist .tscache .next out",
-    "build": "yarn clean && yarn build:next yarn build:ts && yarn build:packager",
-    "build:ts": "tsc --project tsconfig-electron.json",
-    "build:packager": "electron-builder --config electron-builder.yml",
+    "build": "yarn clean && yarn build:next && yarn build:ts && yarn build:electron",
     "build:next": "next build",
-    "start:electron": "electron .",
-    "start:ts": "tsc-watch --noClear --onFirstSuccess \"yarn start:electron\" --project tsconfig-electron.json",
+    "build:ts": "tsc --project tsconfig-electron.json",
+    "build:electron": "electron-builder --config electron-builder.yml",
     "start:next": "next dev",
+    "start:ts": "tsc-watch --noClear --onFirstSuccess \"yarn start:electron\" --project tsconfig-electron.json",
+    "start:electron": "electron .",
     "start": "cross-env NODE_ENV=development yarn start:ts",
-    "open": "open dist/mac-arm64/NextPKG.app/Contents/MacOS/NextPKG"
+    "open": "./dist/mac-arm64/NextPKG.app/Contents/MacOS/NextPKG"
   },
   "license": "ISC",
   "dependencies": {
     "electron-default-menu": "^1.0.2",
-    "electron-reload": "^2.0.0-alpha.1",
     "next-electron-rsc": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

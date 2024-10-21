@@ -8,11 +8,19 @@ directories:
 asarUnpack: '**/*'
 asar: false
 
+files:
+  - '**/*'
+  - '!.tscache'
+  - '!.next'
+  - '!next.config.js'
+  - '!src*'
+  - '!tsconfig*'
+
 extraResources:
   - from: .next/static
     to: app/.next/static # this preserves node_modules inside
   - from: .next/standalone/demo
-    to: .next/standalone/demo # this preserves node_modules inside
+    to: app/.next/standalone/demo # this preserves node_modules inside
 
 #win:
 #  target:

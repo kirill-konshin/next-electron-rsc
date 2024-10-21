@@ -10,7 +10,7 @@
     "build": "tsc --build .",
     "start": "yarn build --watch --preserveWatchOutput"
   },
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "resolve": "^1.22.8"
   },
