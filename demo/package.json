@@ -14,7 +14,7 @@
     "start:ts": "tsc-watch --noClear --onFirstSuccess \"yarn start:electron\" --project tsconfig-electron.json",
     "start:electron": "electron .",
     "start": "cross-env NODE_ENV=development yarn start:ts",
-    "open": "./dist/mac-arm64/NextPKG.app/Contents/MacOS/NextPKG"
+    "open": "./dist/mac-arm64/Next\\ Electron\\ RSC.app/Contents/MacOS/Next\\ Electron\\ RSC"
   },
   "license": "ISC",
   "dependencies": {

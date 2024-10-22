@@ -5,26 +5,15 @@ directories:
   output: dist
   buildResources: assets
 
-asarUnpack: '**/*'
-asar: false
+# asarUnpack: '**/*'
+# asar: false
+
+includeSubNodeModules: true
 
 files:
-  - '**/*'
-  - '!.tscache'
-  - '!.next'
-  - '!next.config.js'
-  - '!src*'
-  - '!tsconfig*'
-
-extraResources:
-  - from: .next/standalone/demo
-    to: app/.next/standalone/demo # this preserves node_modules inside, this assumes static was already copied after Next.js build
-
-#win:
-#  target:
-#    target: portable
-#    arch:
-#      - x64
+  - build
+  - from: '.next/standalone/demo/'
+    to: '.next/standalone/demo/'
 
 mac:
   category: public.app-category.developer-tools

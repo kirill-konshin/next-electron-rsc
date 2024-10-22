@@ -48,16 +48,12 @@ module.exports = {
 I suggest to use Electron Builder to bundle the Electron app. Just add some configuration to `electron-builder.yml`:
 
 ```yaml
-files:
-  - '**/*'
-  - '!.next'
-  - '!next.config.js'
-  - '!src*'
-  - '!tsconfig*'
+includeSubNodeModules: true
 
-extraResources:
-  - from: .next/standalone/%YOUR_PACKAGE_NAME_IN_PACKAGE.JSON%
-    to: app/.next/standalone/%YOUR_PACKAGE_NAME_IN_PACKAGE.JSON%
+files:
+  - build
+  - from: '.next/standalone/demo/'
+    to: '.next/standalone/demo/'
 ```
 
 Replace `%YOUR_PACKAGE_NAME_IN_PACKAGE.JSON%` with what you have in `name` property in `package.json`.
