@@ -123,7 +123,7 @@ export function createHandler({
         socket = new Socket();
 
         protocol.interceptStreamProtocol('http', async (request, callback) => {
-            if (!request.url.includes(localhostUrl)) return;
+            if (!request.url.startsWith(localhostUrl)) return;
 
             try {
                 const response = await handleRequest(request);

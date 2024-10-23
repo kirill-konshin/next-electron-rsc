@@ -21,24 +21,6 @@ const openDevTools = () => {
     mainWindow.webContents.openDevTools();
 };
 
-// Next.js handler
-
-const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
-
-const { createInterceptor } = createHandler({
-    standaloneDir,
-    localhostUrl,
-    protocol,
-    debug: true,
-});
-
-if (!isDev || debugServer) {
-    if (debugServer) console.log(`[APP] Server Debugging Enabled, ${localhostUrl} will be intercepted`);
-    createInterceptor();
-}
-
-// Next.js handler
-
 const createWindow = async () => {
     mainWindow = new BrowserWindow({
         width: isDev ? 2000 : 1000,
@@ -48,6 +30,24 @@ const createWindow = async () => {
             devTools: true,
         },
     });
+
+    // Next.js handler
+
+    const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
+
+    const { createInterceptor } = createHandler({
+        standaloneDir,
+        localhostUrl,
+        protocol,
+        debug: true,
+    });
+
+    if (!isDev || debugServer) {
+        if (debugServer) console.log(`[APP] Server Debugging Enabled, ${localhostUrl} will be intercepted`);
+        createInterceptor();
+    }
+
+    // Next.js handler
 
     mainWindow.once('ready-to-show', () => isDev && openDevTools());
 
