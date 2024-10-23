@@ -31,11 +31,9 @@
   "packageManager": "yarn@4.5.1",
   "workspaces": {
     "packages": [
-      "web",
-      "lib",
       "demo",
-      "electron",
-      "pkg"
+      "lib",
+      "web"
     ]
   },
   "installConfig": {
