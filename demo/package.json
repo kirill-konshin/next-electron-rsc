@@ -11,7 +11,7 @@
     "build:next": "next build",
     "build:ts": "tsc --project tsconfig-electron.json",
     "build:electron": "electron-builder --config electron-builder.yml",
-    "start:next": "next dev",
+    "start:next": "next dev --turbo",
     "start:ts": "tsc-watch --noClear --onFirstSuccess \"yarn start:electron\" --project tsconfig-electron.json",
     "start:electron": "electron .",
     "start": "cross-env NODE_ENV=development yarn start:ts",

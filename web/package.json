@@ -3,17 +3,16 @@
   "version": "1.0.0",
   "description": "demo",
   "private": true,
-  "main": "next.config.mjs",
+  "main": "next.config.ts",
   "bin": "server.js",
   "scripts": {
     "clean": "rm -rf .next out",
-    "start": "next dev",
-    "build": "yarn clean && yarn build:next && yarn build:static && yarn build:public && yarn build:pkg",
+    "start": "next dev --turbo",
+    "build": "yarn clean && yarn build:next && yarn build:fix && yarn build:pkg",
     "build:next": "next build",
-    "build:static": "mkdir -p .next/standalone/web/.next/static && cp -r .next/static/* .next/standalone/web/.next/static",
-    "build:public": "mkdir -p .next/standalone/web/public && cp -r public/* .next/standalone/web/public",
-    "build:pkg": "cd .next/standalone/web && pkg . --public --public-packages \"*\" --no-bytecode --compress=GZip --debug",
-    "open": "open ./out/next-pkg-web"
+    "build:fix": "sed -i '' 's/process.chdir(__dirname)//' .next/standalone/web/server.js",
+    "build:pkg": "cd .next/standalone/web && pkg . --compress=GZip --sea",
+    "open": "./out/next-pkg-web"
   },
   "license": "ISC",
   "dependencies": {
@@ -23,18 +22,17 @@
   "devDependencies": {
     "@types/node": "^22.7.9",
     "@types/react": "^18.3.12",
+    "@yao-pkg/pkg": "^5.16.1",
     "next": "^15.0.1",
-    "pkg": "^5.8.1",
     "typescript": "^5.6.3"
   },
   "pkg": {
     "assets": [
-      ".next/**/*.*",
       ".next/**/*",
       "public/**/*.*"
     ],
     "targets": [
-      "node18-macos-arm64"
+      "node22-macos-arm64"
     ],
     "outputPath": "../../../out"
   }

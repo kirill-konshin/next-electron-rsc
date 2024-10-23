@@ -1,9 +1,10 @@
-/**
- * @type {import('next').NextConfig}
- */
-export default {
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
     output: 'standalone',
     outputFileTracingIncludes: {
         '*': ['public/**/*', '.next/static/**/*'],
     },
 };
+
+export default nextConfig;
