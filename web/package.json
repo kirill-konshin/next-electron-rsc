@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "demo",
   "private": true,
-  "main": "next.config.js",
+  "main": "next.config.mjs",
   "bin": "server.js",
   "scripts": {
     "clean": "rm -rf .next out",
