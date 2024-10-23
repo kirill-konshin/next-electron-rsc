@@ -8,17 +8,34 @@
   "scripts": {
     "clean": "rm -rf .next out",
     "start": "next dev",
-    "build": "next build"
+    "build": "yarn clean && yarn build:next && yarn build:static && yarn build:public && yarn build:pkg",
+    "build:next": "next build",
+    "build:static": "mkdir -p .next/standalone/web/.next/static && cp -r .next/static/* .next/standalone/web/.next/static",
+    "build:public": "mkdir -p .next/standalone/web/public && cp -r public/* .next/standalone/web/public",
+    "build:pkg": "cd .next/standalone/web && pkg . --public --public-packages \"*\" --no-bytecode --compress=GZip --debug",
+    "open": "open ./out/next-pkg-web"
   },
   "license": "ISC",
   "dependencies": {
-    "next": "^14.2.16",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.7.9",
     "@types/react": "^18.3.12",
+    "next": "^14.2.16",
+    "pkg": "^5.8.1",
     "typescript": "^5.6.3"
+  },
+  "pkg": {
+    "assets": [
+      ".next/**/*.*",
+      ".next/**/*",
+      "public/**/*.*"
+    ],
+    "targets": [
+      "node18-macos-arm64"
+    ],
+    "outputPath": "../../../out"
   }
 }
