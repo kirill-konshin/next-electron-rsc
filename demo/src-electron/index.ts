@@ -58,8 +58,7 @@ const createWindow = async () => {
         return { action: 'deny' };
     });
 
-    const menu = defaultMenu(app, shell);
-    Menu.setApplicationMenu(Menu.buildFromTemplate(menu));
+    Menu.setApplicationMenu(Menu.buildFromTemplate(defaultMenu(app, shell)));
 
     // Should be last, after all listeners and menu
 

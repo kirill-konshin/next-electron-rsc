@@ -16,6 +16,7 @@ export default function Client({ foo }) {
         <div>
             Server: {foo}, API: {text}
             <Image src="/image.png" width={1000} height={420} alt="Next Electron RSC" />
+            <img src="https://picsum.photos/1000/420" width={1000} height={420} alt="Next Electron RSC" />
         </div>
     );
 }

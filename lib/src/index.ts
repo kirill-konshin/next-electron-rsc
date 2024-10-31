@@ -4,6 +4,8 @@ import type NextNodeServer from 'next/dist/server/next-server';
 
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { Socket } from 'node:net';
+import http from 'node:http';
+import https from 'node:https';
 import resolve from 'resolve';
 import { parse } from 'url';
 import path from 'path';
@@ -123,7 +125,27 @@ export function createHandler({
         socket = new Socket();
 
         protocol.interceptStreamProtocol('http', async (request, callback) => {
-            if (!request.url.startsWith(localhostUrl)) return;
+            if (!request.url.startsWith(localhostUrl)) {
+                const protocol = (request.url.startsWith('https') ? https : http) as any;
+
+                const req = protocol.request(
+                    {
+                        method: request.method,
+                        headers: request.headers,
+                        url: request.url,
+                    },
+                    callback,
+                );
+
+                request.uploadData?.forEach((item) => {
+                    if (!item.bytes) return;
+                    req.write(item.bytes);
+                });
+
+                req.end();
+
+                return;
+            }
 
             try {
                 const response = await handleRequest(request);
