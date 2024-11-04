@@ -12,7 +12,7 @@ Install depencencies:
 $ npm install next-electron-rsc next electron electron-builder
 ```
 
-Add following to your `main.js` in Electron:
+Add following to your `main.js` in Electron before you create a window:
 
 ```js
 import { app, protocol } from 'electron';
@@ -28,8 +28,12 @@ const { createInterceptor } = createHandler({
   localhostUrl,
   protocol,
 });
+```
 
-if (!isDev) createInterceptor();
+Then add this when `mainWindow` is created:
+
+```js
+if (!isDev) createInterceptor({ session: mainWindow.webContents.session });
 ```
 
 Configure your Next.js build in `next.config.js`:

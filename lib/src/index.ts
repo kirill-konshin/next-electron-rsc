@@ -1,30 +1,63 @@
-import type { Protocol, ProtocolRequest, ProtocolResponse } from 'electron';
+import type { Protocol, Session } from 'electron';
 import type { NextConfig } from 'next';
 import type NextNodeServer from 'next/dist/server/next-server';
 
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { Socket } from 'node:net';
-import http from 'node:http';
-import https from 'node:https';
 import resolve from 'resolve';
 import { parse } from 'url';
 import path from 'path';
-import { PassThrough } from 'node:stream';
+import fs from 'fs';
+import { parse as parseCookie, splitCookiesString } from 'set-cookie-parser';
+import { serialize as serializeCookie } from 'cookie';
+import assert = require('node:assert');
 
-function createRequest({ socket, origReq }: { socket: Socket; origReq: ProtocolRequest }): IncomingMessage {
+async function createRequest({
+    socket,
+    origReq,
+    session,
+}: {
+    socket: Socket;
+    origReq: Request;
+    session: Session;
+}): Promise<IncomingMessage> {
     const req = new IncomingMessage(socket);
 
-    const url = parse(origReq.url, false);
+    const url = new URL(origReq.url);
 
     // Normal Next.js URL does not contain schema and host/port, otherwise endless loops due to butchering of schema by normalizeRepeatedSlashes in resolve-routes
     req.url = url.pathname + (url.search || '');
     req.method = origReq.method;
-    req.headers = origReq.headers;
 
-    origReq.uploadData?.forEach((item) => {
-        if (!item.bytes) return;
-        req.push(item.bytes);
+    origReq.headers.forEach((value, key) => {
+        req.headers[key] = value;
     });
+
+    // @see https://github.com/electron/electron/issues/39525#issue-1852825052
+    const cookies = await session.cookies.get({
+        url: origReq.url,
+        // domain: url.hostname,
+        // path: url.pathname,
+        // `secure: true` Cookies should not be sent via http
+        // secure: url.protocol === 'http:' ? false : undefined,
+        // theoretically not possible to implement sameSite because we don't know the url
+        // of the website that is requesting the resource
+    });
+
+    if (cookies.length) {
+        const cookiesHeader = [];
+
+        for (const cookie of cookies) {
+            const { name, value, ...options } = cookie;
+            cookiesHeader.push(serializeCookie(name, value)); // ...(options as any)?
+        }
+
+        req.headers.cookie = cookiesHeader.join('; ');
+    }
+
+    if (origReq.body) {
+        req.push(Buffer.from(await origReq.arrayBuffer()));
+    }
 
     req.push(null);
     req.complete = true;
@@ -33,31 +66,56 @@ function createRequest({ socket, origReq }: { socket: Socket; origReq: ProtocolR
 }
 
 class ReadableServerResponse extends ServerResponse {
-    private passThrough = new PassThrough();
-    private promiseResolvers = Promise.withResolvers<ProtocolResponse>(); // there is no event for writeHead
+    write(chunk: any, ...args): boolean {
+        this.emit('data', chunk);
+        return super.write(chunk, ...args);
+    }
 
-    constructor(req: IncomingMessage) {
-        super(req);
-        this.write = this.passThrough.write.bind(this.passThrough);
-        this.end = this.passThrough.end.bind(this.passThrough);
-        this.passThrough.on('drain', () => this.emit('drain'));
+    end(chunk: any, ...args): this {
+        this.emit('end', chunk);
+        return super.end(chunk, ...args);
     }
 
     writeHead(statusCode: number, ...args: any): this {
-        super.writeHead(statusCode, ...args);
-
-        this.promiseResolvers.resolve({
-            statusCode: this.statusCode,
-            mimeType: this.getHeader('Content-Type') as any,
-            headers: this.getHeaders() as any,
-            data: this.passThrough as any,
-        });
-
-        return this;
+        this.emit('writeHead', statusCode);
+        return super.writeHead(statusCode, ...args);
     }
 
-    async createProtocolResponse() {
-        return this.promiseResolvers.promise;
+    getResponse() {
+        return new Promise<Response>((resolve, reject) => {
+            const readableStream = new ReadableStream({
+                start: (controller) => {
+                    let onData;
+
+                    this.on(
+                        'data',
+                        (onData = (chunk) => {
+                            controller.enqueue(chunk);
+                        }),
+                    );
+
+                    this.once('end', (chunk) => {
+                        controller.enqueue(chunk);
+                        controller.close();
+                        this.off('data', onData);
+                    });
+                },
+                pull: (controller) => {
+                    this.emit('drain');
+                },
+                cancel: () => {},
+            });
+
+            this.once('writeHead', (statusCode) => {
+                resolve(
+                    new Response(readableStream, {
+                        status: statusCode,
+                        statusText: this.statusMessage,
+                        headers: this.getHeaders() as any,
+                    }),
+                );
+            });
+        });
     }
 }
 
@@ -82,6 +140,11 @@ export function createHandler({
     protocol: Protocol;
     debug?: boolean;
 }) {
+    assert(standaloneDir, 'standaloneDir is required');
+    assert(protocol, 'protocol is required');
+
+    assert(fs.existsSync(standaloneDir), 'standaloneDir does not exist');
+
     const next = require(resolve.sync('next', { basedir: standaloneDir }));
 
     // @see https://github.com/vercel/next.js/issues/64031#issuecomment-2078708340
@@ -99,66 +162,92 @@ export function createHandler({
 
     let socket;
 
+    protocol.registerSchemesAsPrivileged([
+        {
+            scheme: 'http',
+            privileges: {
+                standard: true,
+                secure: true,
+                supportFetchAPI: true,
+            },
+        },
+    ]);
+
     //TODO Return function to close socket
     process.on('SIGTERM', () => socket.end());
     process.on('SIGINT', () => socket.end());
 
-    async function handleRequest(origReq: ProtocolRequest): Promise<ProtocolResponse> {
-        try {
-            if (!socket) throw new Error('Socket is not initialized, check if createInterceptor was called');
+    /**
+     * @param {import('electron').Session} session
+     * @returns {() => void}
+     */
+    function createInterceptor({ session }: { session: Session }) {
+        assert(session, 'Session is required');
 
-            await preparePromise;
-
-            const req = createRequest({ socket, origReq });
-            const res = new ReadableServerResponse(req);
-            const url = parse(req.url, true);
-
-            handler(req, res, url);
-
-            return await res.createProtocolResponse();
-        } catch (e) {
-            return e;
-        }
-    }
-
-    function createInterceptor() {
         socket = new Socket();
 
-        protocol.interceptStreamProtocol('http', async (request, callback) => {
-            if (!request.url.startsWith(localhostUrl)) {
-                const protocol = (request.url.startsWith('https') ? https : http) as any;
+        protocol.handle('http', async (request) => {
+            try {
+                if (!request.url.startsWith(localhostUrl)) {
+                    if (debug) console.log('[NEXT] External HTTP not supported', request.url);
+                    throw new Error('External HTTP not supported, use HTTPS');
+                }
 
-                const req = protocol.request(
-                    {
-                        method: request.method,
-                        headers: request.headers,
-                        url: request.url,
-                    },
-                    callback,
+                if (!socket) throw new Error('Socket is not initialized, check if createInterceptor was called');
+
+                await preparePromise;
+
+                const req = await createRequest({ socket, origReq: request, session });
+                const res = new ReadableServerResponse(req);
+                const url = parse(req.url, true);
+
+                handler(req, res, url);
+
+                const response = await res.getResponse();
+
+                // @see https://github.com/electron/electron/issues/30717
+                // @see https://github.com/electron/electron/issues/39525
+                const cookies = parseCookie(
+                    response.headers.getSetCookie().reduce((r, c) => {
+                        // @see https://github.com/nfriedly/set-cookie-parser?tab=readme-ov-file#usage-in-react-native-and-with-some-other-fetch-implementations
+                        return [...r, ...splitCookiesString(c)];
+                    }, []),
                 );
 
-                request.uploadData?.forEach((item) => {
-                    if (!item.bytes) return;
-                    req.write(item.bytes);
-                });
+                for (const cookie of cookies) {
+                    const expires = cookie.expires
+                        ? cookie.expires.getTime()
+                        : cookie.maxAge
+                          ? Date.now() + cookie.maxAge * 1000
+                          : undefined;
 
-                req.end();
+                    if (expires < Date.now()) {
+                        await session.cookies.remove(request.url, cookie.name);
+                        continue;
+                    }
 
-                return;
-            }
+                    await session.cookies.set({
+                        name: cookie.name,
+                        value: cookie.value,
+                        path: cookie.path,
+                        domain: cookie.domain,
+                        secure: cookie.secure,
+                        httpOnly: cookie.httpOnly,
+                        url: request.url,
+                        expirationDate: expires,
+                    } as any);
+                }
 
-            try {
-                const response = await handleRequest(request);
-                if (debug) console.log('[NEXT] Handler', request.url, response.statusCode, response.mimeType);
-                callback(response);
+                if (debug) console.log('[NEXT] Handler', request.url, response.status);
+                return response;
             } catch (e) {
                 if (debug) console.log('[NEXT] Error', e);
-                callback(e);
+                return new Response(e.message, { status: 500 });
             }
         });
 
         return () => {
-            protocol.uninterceptProtocol('http');
+            protocol.unhandle('http');
             socket.end();
         };
     }

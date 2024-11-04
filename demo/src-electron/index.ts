@@ -1,14 +1,14 @@
 import path from 'path';
-import { app, BrowserWindow, Menu, protocol, shell } from 'electron';
+import { app, BrowserWindow, Menu, protocol, session, shell } from 'electron';
 import defaultMenu from 'electron-default-menu';
 import { createHandler } from 'next-electron-rsc';
 
 const isDev = process.env.NODE_ENV === 'development';
-const debugServer = !!process.env.DEBUG_SERVER;
 const appPath = app.getAppPath();
-const localhostUrl = 'http://localhost:666'; // must match Next.js dev server
+const localhostUrl = 'http://localhost:3000'; // must match Next.js dev server
 
 let mainWindow;
+let stopIntercept;
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
@@ -21,9 +21,22 @@ const openDevTools = () => {
     mainWindow.webContents.openDevTools();
 };
 
+// Next.js handler
+
+const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
+
+const { createInterceptor } = createHandler({
+    standaloneDir,
+    localhostUrl,
+    protocol,
+    debug: true,
+});
+
+// Next.js handler
+
 const createWindow = async () => {
     mainWindow = new BrowserWindow({
-        width: isDev ? 2000 : 1000,
+        width: 1000,
         height: 800,
         webPreferences: {
             contextIsolation: true, // protect against prototype pollution
@@ -33,25 +46,19 @@ const createWindow = async () => {
 
     // Next.js handler
 
-    const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
-
-    const { createInterceptor } = createHandler({
-        standaloneDir,
-        localhostUrl,
-        protocol,
-        debug: true,
-    });
-
-    if (!isDev || debugServer) {
-        if (debugServer) console.log(`[APP] Server Debugging Enabled, ${localhostUrl} will be intercepted`);
-        createInterceptor();
+    if (!isDev) {
+        console.log(`[APP] Server Debugging Enabled, ${localhostUrl} will be intercepted to ${standaloneDir}`);
+        stopIntercept = createInterceptor({ session: mainWindow.webContents.session });
     }
 
     // Next.js handler
 
-    mainWindow.once('ready-to-show', () => isDev && openDevTools());
+    mainWindow.once('ready-to-show', () => openDevTools());
 
-    mainWindow.on('closed', () => (mainWindow = null));
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+        stopIntercept?.();
+    });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         shell.openExternal(url).catch((e) => console.error(e));
