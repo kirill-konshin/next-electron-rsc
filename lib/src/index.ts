@@ -4,59 +4,64 @@ import type NextNodeServer from 'next/dist/server/next-server';
 
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { Socket } from 'node:net';
+import { parse } from 'node:url';
+import path from 'node:path';
+import fs from 'node:fs';
+import assert from 'node:assert';
+
 import resolve from 'resolve';
-import { parse } from 'url';
-import path from 'path';
-import fs from 'fs';
 import { parse as parseCookie, splitCookiesString } from 'set-cookie-parser';
 import { serialize as serializeCookie } from 'cookie';
-import assert = require('node:assert');
 
 async function createRequest({
     socket,
-    origReq,
+    request,
     session,
 }: {
     socket: Socket;
-    origReq: Request;
+    request: Request;
     session: Session;
 }): Promise<IncomingMessage> {
     const req = new IncomingMessage(socket);
 
-    const url = new URL(origReq.url);
+    const url = new URL(request.url);
 
     // Normal Next.js URL does not contain schema and host/port, otherwise endless loops due to butchering of schema by normalizeRepeatedSlashes in resolve-routes
     req.url = url.pathname + (url.search || '');
-    req.method = origReq.method;
+    req.method = request.method;
 
-    origReq.headers.forEach((value, key) => {
+    request.headers.forEach((value, key) => {
         req.headers[key] = value;
     });
 
-    // @see https://github.com/electron/electron/issues/39525#issue-1852825052
-    const cookies = await session.cookies.get({
-        url: origReq.url,
-        // domain: url.hostname,
-        // path: url.pathname,
-        // `secure: true` Cookies should not be sent via http
-        // secure: url.protocol === 'http:' ? false : undefined,
-        // theoretically not possible to implement sameSite because we don't know the url
-        // of the website that is requesting the resource
-    });
+    try {
+        // @see https://github.com/electron/electron/issues/39525#issue-1852825052
+        const cookies = await session.cookies.get({
+            url: request.url,
+            // domain: url.hostname,
+            // path: url.pathname,
+            // `secure: true` Cookies should not be sent via http
+            // secure: url.protocol === 'http:' ? false : undefined,
+            // theoretically not possible to implement sameSite because we don't know the url
+            // of the website that is requesting the resource
+        });
 
-    if (cookies.length) {
-        const cookiesHeader = [];
+        if (cookies.length) {
+            const cookiesHeader = [];
 
-        for (const cookie of cookies) {
-            const { name, value, ...options } = cookie;
-            cookiesHeader.push(serializeCookie(name, value)); // ...(options as any)?
+            for (const cookie of cookies) {
+                const { name, value, ...options } = cookie;
+                cookiesHeader.push(serializeCookie(name, value)); // ...(options as any)?
+            }
+
+            req.headers.cookie = cookiesHeader.join('; ');
         }
-
-        req.headers.cookie = cookiesHeader.join('; ');
+    } catch (e) {
+        throw new Error('Failed to parse cookies', { cause: e });
     }
 
-    if (origReq.body) {
-        req.push(Buffer.from(await origReq.arrayBuffer()));
+    if (request.body) {
+        req.push(Buffer.from(await request.arrayBuffer()));
     }
 
     req.push(null);
@@ -141,9 +146,8 @@ export function createHandler({
     debug?: boolean;
 }) {
     assert(standaloneDir, 'standaloneDir is required');
-    assert(protocol, 'protocol is required');
-
     assert(fs.existsSync(standaloneDir), 'standaloneDir does not exist');
+    assert(protocol, 'protocol is required');
 
     const next = require(resolve.sync('next', { basedir: standaloneDir }));
 
@@ -160,8 +164,6 @@ export function createHandler({
 
     const preparePromise = app.prepare();
 
-    let socket;
-
     protocol.registerSchemesAsPrivileged([
         {
             scheme: 'http',
@@ -173,10 +175,6 @@ export function createHandler({
         },
     ]);
 
-    //TODO Return function to close socket
-    process.on('SIGTERM', () => socket.end());
-    process.on('SIGINT', () => socket.end());
-
     /**
      * @param {import('electron').Session} session
      * @returns {() => void}
@@ -184,20 +182,20 @@ export function createHandler({
     function createInterceptor({ session }: { session: Session }) {
         assert(session, 'Session is required');
 
-        socket = new Socket();
+        const socket = new Socket();
+
+        const closeSocket = () => socket.end();
+
+        process.on('SIGTERM', () => closeSocket);
+        process.on('SIGINT', () => closeSocket);
 
         protocol.handle('http', async (request) => {
             try {
-                if (!request.url.startsWith(localhostUrl)) {
-                    if (debug) console.log('[NEXT] External HTTP not supported', request.url);
-                    throw new Error('External HTTP not supported, use HTTPS');
-                }
-
-                if (!socket) throw new Error('Socket is not initialized, check if createInterceptor was called');
+                assert(request.url.startsWith(localhostUrl), 'External HTTP not supported, use HTTPS');
 
                 await preparePromise;
 
-                const req = await createRequest({ socket, origReq: request, session });
+                const req = await createRequest({ socket, request, session });
                 const res = new ReadableServerResponse(req);
                 const url = parse(req.url, true);
 
@@ -205,37 +203,41 @@ export function createHandler({
 
                 const response = await res.getResponse();
 
-                // @see https://github.com/electron/electron/issues/30717
-                // @see https://github.com/electron/electron/issues/39525
-                const cookies = parseCookie(
-                    response.headers.getSetCookie().reduce((r, c) => {
-                        // @see https://github.com/nfriedly/set-cookie-parser?tab=readme-ov-file#usage-in-react-native-and-with-some-other-fetch-implementations
-                        return [...r, ...splitCookiesString(c)];
-                    }, []),
-                );
+                try {
+                    // @see https://github.com/electron/electron/issues/30717
+                    // @see https://github.com/electron/electron/issues/39525
+                    const cookies = parseCookie(
+                        response.headers.getSetCookie().reduce((r, c) => {
+                            // @see https://github.com/nfriedly/set-cookie-parser?tab=readme-ov-file#usage-in-react-native-and-with-some-other-fetch-implementations
+                            return [...r, ...splitCookiesString(c)];
+                        }, []),
+                    );
 
-                for (const cookie of cookies) {
-                    const expires = cookie.expires
-                        ? cookie.expires.getTime()
-                        : cookie.maxAge
-                          ? Date.now() + cookie.maxAge * 1000
-                          : undefined;
+                    for (const cookie of cookies) {
+                        const expires = cookie.expires
+                            ? cookie.expires.getTime()
+                            : cookie.maxAge
+                              ? Date.now() + cookie.maxAge * 1000
+                              : undefined;
 
-                    if (expires < Date.now()) {
-                        await session.cookies.remove(request.url, cookie.name);
-                        continue;
+                        if (expires < Date.now()) {
+                            await session.cookies.remove(request.url, cookie.name);
+                            continue;
+                        }
+
+                        await session.cookies.set({
+                            name: cookie.name,
+                            value: cookie.value,
+                            path: cookie.path,
+                            domain: cookie.domain,
+                            secure: cookie.secure,
+                            httpOnly: cookie.httpOnly,
+                            url: request.url,
+                            expirationDate: expires,
+                        } as any);
                     }
-
-                    await session.cookies.set({
-                        name: cookie.name,
-                        value: cookie.value,
-                        path: cookie.path,
-                        domain: cookie.domain,
-                        secure: cookie.secure,
-                        httpOnly: cookie.httpOnly,
-                        url: request.url,
-                        expirationDate: expires,
-                    } as any);
+                } catch (e) {
+                    throw new Error('Failed to set cookies', { cause: e });
                 }
 
                 if (debug) console.log('[NEXT] Handler', request.url, response.status);
@@ -246,9 +248,11 @@ export function createHandler({
             }
         });
 
-        return () => {
+        return function stopIntercept() {
             protocol.unhandle('http');
-            socket.end();
+            process.off('SIGTERM', () => closeSocket);
+            process.off('SIGINT', () => closeSocket);
+            closeSocket();
         };
     }
 

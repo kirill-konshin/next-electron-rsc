@@ -17,5 +17,10 @@ export async function POST(req: NextRequest) {
         maxAge: 60 * 60, // 1 hour
     });
 
+    res.cookies.set('sidebar:state', Date.now().toString(), {
+        path: '/',
+        maxAge: 60 * 60, // 1 hour
+    });
+
     return res;
 }

@@ -1933,10 +1933,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cookie@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "cookie@npm:1.0.1"
-  checksum: 10/4b24d4fad5ba94ab76d74a8fc33ae1dcdb5dc02013e03e9577b26f019d9dfe396ffb9b3711ba1726bcfa1b93c33d117db0f31e187838aed7753dee1abc691688
+"cookie@npm:0.6.0":
+  version: 0.6.0
+  resolution: "cookie@npm:0.6.0"
+  checksum: 10/c1f8f2ea7d443b9331680598b0ae4e6af18a618c37606d1bbdc75bec8361cce09fe93e727059a673f2ba24467131a9fb5a4eec76bb1b149c1b3e1ccb268dc583
   languageName: node
   linkType: hard
 
@@ -4959,7 +4959,7 @@ __metadata:
     "@types/react-dom": "npm:^18.3.1"
     "@types/resolve": "npm:^1.20.6"
     "@types/set-cookie-parser": "npm:^2"
-    cookie: "npm:^1.0.1"
+    cookie: "npm:0.6.0"
     electron: "npm:^33.0.2"
     next: "npm:^15.0.2"
     resolve: "npm:^1.22.8"

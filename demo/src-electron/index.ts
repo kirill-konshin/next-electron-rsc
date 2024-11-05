@@ -16,11 +16,6 @@ process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
 process.on('SIGTERM', () => process.exit(0));
 process.on('SIGINT', () => process.exit(0));
 
-const openDevTools = () => {
-    mainWindow.setBounds({ width: 2000 });
-    mainWindow.webContents.openDevTools();
-};
-
 // Next.js handler
 
 const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
@@ -36,7 +31,7 @@ const { createInterceptor } = createHandler({
 
 const createWindow = async () => {
     mainWindow = new BrowserWindow({
-        width: 1000,
+        width: 1600,
         height: 800,
         webPreferences: {
             contextIsolation: true, // protect against prototype pollution
@@ -53,7 +48,7 @@ const createWindow = async () => {
 
     // Next.js handler
 
-    mainWindow.once('ready-to-show', () => openDevTools());
+    mainWindow.once('ready-to-show', () => mainWindow.webContents.openDevTools());
 
     mainWindow.on('closed', () => {
         mainWindow = null;
