@@ -71,23 +71,12 @@ async function createRequest({
 }
 
 class ReadableServerResponse extends ServerResponse {
-    write(chunk: any, ...args): boolean {
-        this.emit('data', chunk);
-        return super.write(chunk, ...args);
-    }
+    private responsePromise: Promise<Response>;
 
-    end(chunk: any, ...args): this {
-        this.emit('end', chunk);
-        return super.end(chunk, ...args);
-    }
+    constructor(req: IncomingMessage) {
+        super(req);
 
-    writeHead(statusCode: number, ...args: any): this {
-        this.emit('writeHead', statusCode);
-        return super.writeHead(statusCode, ...args);
-    }
-
-    getResponse() {
-        return new Promise<Response>((resolve, reject) => {
+        this.responsePromise = new Promise<Response>((resolve, reject) => {
             const readableStream = new ReadableStream({
                 start: (controller) => {
                     let onData;
@@ -121,6 +110,25 @@ class ReadableServerResponse extends ServerResponse {
                 );
             });
         });
+    }
+
+    write(chunk: any, ...args): boolean {
+        this.emit('data', chunk);
+        return super.write(chunk, ...args);
+    }
+
+    end(chunk: any, ...args): this {
+        this.emit('end', chunk);
+        return super.end(chunk, ...args);
+    }
+
+    writeHead(statusCode: number, ...args: any): this {
+        this.emit('writeHead', statusCode);
+        return super.writeHead(statusCode, ...args);
+    }
+
+    getResponse() {
+        return this.responsePromise;
     }
 }
 

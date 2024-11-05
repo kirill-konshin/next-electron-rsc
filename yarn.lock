@@ -2175,6 +2175,7 @@ __metadata:
     electron: "npm:33.0.2"
     electron-builder: "npm:^25.1.8"
     electron-default-menu: "npm:^1.0.2"
+    iron-session: "npm:^8.0.3"
     next: "npm:^15.0.2"
     next-electron-rsc: "npm:*"
     react: "npm:^18.3.1"
@@ -3887,6 +3888,24 @@ __metadata:
   version: 1.1.5
   resolution: "ip@npm:1.1.5"
   checksum: 10/40a00572cf06b53f4c7b7fe6270a8427ef4c6c0820a380f9f1eb48a323eb09c7dbd16245b472cf5a2d083911d0deae4d712b6e6c88b346fa274e8ce07756a7d6
+  languageName: node
+  linkType: hard
+
+"iron-session@npm:^8.0.3":
+  version: 8.0.3
+  resolution: "iron-session@npm:8.0.3"
+  dependencies:
+    cookie: "npm:0.6.0"
+    iron-webcrypto: "npm:1.2.1"
+    uncrypto: "npm:0.1.3"
+  checksum: 10/73befd8333e8090cdab3756c8de4ed374ac3c9b20fa0ca44ad28f6031649052edacd0f0d6cfe87147cb8fb2b7b9d4d88a41f667ad703e84ac20c05a938ac6bc9
+  languageName: node
+  linkType: hard
+
+"iron-webcrypto@npm:1.2.1":
+  version: 1.2.1
+  resolution: "iron-webcrypto@npm:1.2.1"
+  checksum: 10/c1f52ccfe2780efa5438c134538ee4b26c96a87d22f351d896781219efbce25b4fe716d1cb7f248e02da96881760541135acbcc7c0622ffedf71cb0e227bebf9
   languageName: node
   linkType: hard
 
@@ -7053,6 +7072,13 @@ __metadata:
     has-symbols: "npm:^1.0.3"
     which-boxed-primitive: "npm:^1.0.2"
   checksum: 10/06e1ee41c1095e37281cb71a975cb3350f7cb470a0665d2576f02cc9564f623bd90cfc0183693b8a7fdf2d242963dcc3010b509fa3ac683f540c765c0f3e7e43
+  languageName: node
+  linkType: hard
+
+"uncrypto@npm:0.1.3":
+  version: 0.1.3
+  resolution: "uncrypto@npm:0.1.3"
+  checksum: 10/0020f74b0ce34723196d8982a73bb7f40cff455a41b8f88ae146b86885f4e66e41a1241fe80a887505c3bd2c7f07ed362b6ed041968370073c40a98496e6a737
   languageName: node
   linkType: hard
 
