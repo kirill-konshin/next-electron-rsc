@@ -5,15 +5,14 @@ directories:
   output: dist
   buildResources: assets
 
-# asarUnpack: '**/*'
-# asar: false
-
-includeSubNodeModules: true
+#asarUnpack:
+#  - '**/.next/cache/**/*'
+asar: false
 
 files:
   - build
-  - from: '.next/standalone/demo/'
-    to: '.next/standalone/demo/'
+  - '.next/standalone/demo/**/*'
+  - '.next/standalone/demo/**/node_modules/**'
 
 mac:
   category: public.app-category.developer-tools

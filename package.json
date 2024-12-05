@@ -1,7 +1,8 @@
 {
-  "name": "next-electron-demo",
+  "name": "monorepo",
   "version": "1.0.0",
   "description": "demo",
+  "private": true,
   "scripts": {
     "postinstall": "husky install",
     "clean": "yarn workspaces foreach -A run clean && rm -rf node_modules",

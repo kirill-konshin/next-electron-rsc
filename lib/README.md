@@ -4,6 +4,8 @@ With the emergence of [React Server Components](https://react.dev/reference/rsc/
 
 At the same time, Electron is a de-facto standard for modern desktop apps written using web technologies, especially when application must have filesystem and other system API access, while being written in JS ([Tauri](https://tauri.app) receives an honorable mention here if you know Rust or if you only need a simple WebView2 shell).
 
+Please read the full article if you're interested in the topic and the mechanics how this library works: https://medium.com/@kirill.konshin/the-ultimate-electron-app-with-next-js-and-react-server-components-a5c0cabda72b.
+
 # Installation & Usage
 
 Install depencencies:
