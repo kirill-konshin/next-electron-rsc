@@ -24,6 +24,9 @@ const appPath = app.getAppPath();
 const isDev = process.env.NODE_ENV === 'development';
 const localhostUrl = 'http://localhost:3000'; // must match Next.js dev server
 
+// change to your path, make sure it's added to Electron Builder files
+const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
+
 const { createInterceptor } = createHandler({
   standaloneDir,
   staticDir,
@@ -79,3 +82,12 @@ For convenience, you can add following scripts to `package.json`:
 ```
 
 The demo separates `src` of Next.js and `src-electron` of Electron, this ensures Next.js does not try to compile Electron.
+
+To quickly run the demo, clone this repo and run:
+
+```bash
+yarn
+yarn build
+cd demo
+yarn start:electron
+```
