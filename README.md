@@ -6,6 +6,8 @@ At the same time, Electron is a de-facto standard for modern desktop apps writte
 
 Please read the full article if you're interested in the topic and the mechanics how this library works: https://medium.com/@kirill.konshin/the-ultimate-electron-app-with-next-js-and-react-server-components-a5c0cabda72b.
 
+This library makes it straightforward to use combination of Next.js running in Electron, the best way to develop desktop apps.
+
 ## Capabilities
 
 - ✅ No open ports in production mode
@@ -192,5 +194,9 @@ To quickly run the demo, clone this repo and run:
 yarn
 yarn build
 cd demo
-yarn start:electron
+yarn start
 ```
+
+You should hear the OS beep, that's Electron shell API in action, called from Next.js server page.
+
+Demo source: https://github.com/kirill-konshin/next-electron-rsc/tree/main/demo
