@@ -6,11 +6,9 @@ export default async function Page() {
     electron.shell?.beep();
 
     return (
-        <div>
-            <Client
-                server={`Node Version: ${process.version}, Electron Version: ${process.versions.electron}, App Version: ${app?.getVersion()}`}
-            />
-        </div>
+        <Client
+            server={`Node Version: ${process.version}, Electron Version: ${process.versions.electron}, App Version: ${app?.getVersion()}`}
+        />
     );
 }
 
