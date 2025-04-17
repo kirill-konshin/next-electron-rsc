@@ -22,6 +22,14 @@ Install depencencies:
 $ npm install next-electron-rsc next electron electron-builder
 ```
 
+In some cases Electron may not install itself correctly, so you may need to run:
+
+```bash
+$ node node_modules/electron/install.js
+```
+
+You can also add this to `prepare` script in `package.json`. See [comment](https://github.com/kirill-konshin/next-electron-rsc/issues/10#issuecomment-2812207039).
+
 ## Add following to your `main.js` or `main.ts` in Electron
 
 ```js

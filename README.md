@@ -6,7 +6,15 @@ At the same time, Electron is a de-facto standard for modern desktop apps writte
 
 Please read the full article if you're interested in the topic and the mechanics how this library works: https://medium.com/@kirill.konshin/the-ultimate-electron-app-with-next-js-and-react-server-components-a5c0cabda72b.
 
-# Installation & Usage
+## Capabilities
+
+- ✅ No open ports in production mode
+- ✅ React Server Components
+- ✅ Full support of Next.js features (Pages and App routers, images)
+- ✅ Full support of Electron features in Next.js pages & route handlers
+- ✅ Next.js Dev Server & HMR
+
+## Installation & Usage
 
 Install depencencies:
 
@@ -14,7 +22,15 @@ Install depencencies:
 $ npm install next-electron-rsc next electron electron-builder
 ```
 
-# Add following to your `main.js` or `main.ts` in Electron
+In some cases Electron may not install itself correctly, so you may need to run:
+
+```bash
+$ node node_modules/electron/install.js
+```
+
+You can also add this to `prepare` script in `package.json`. See [comment](https://github.com/kirill-konshin/next-electron-rsc/issues/10#issuecomment-2812207039).
+
+## Add following to your `main.js` or `main.ts` in Electron
 
 ```js
 import path from 'path';
@@ -83,6 +99,39 @@ app.on('ready', createWindow);
 app.on('window-all-closed', () => app.quit()); // if (process.platform !== 'darwin')
 
 app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && !mainWindow && createWindow());
+```
+
+## Ensure Next.js pages are dynamic
+
+You can now call Electron APIs directly from Next.js server side pages & route handlers: `app/page.tsx`, `app/api/route.ts` and so on.
+
+Write your pages same way as usual, with only difference is that now everything "server" is running on target user machine with access to system APIs like file system, notifications, etc.
+
+```tsx
+// app/page.tsx
+import electron, { app } from 'electron';
+
+export const dynamic = 'force-dynamic'; // ⚠️⚠️⚠️ THIS IS REQUIRED TO ENSURE PAGE IS DYNAMIC, NOT PRE-BUILT
+
+export default async function Page() {
+  electron.shell?.beep();
+  return <div>{app.getVersion()}</div>;
+}
+```
+
+```ts
+// app/api/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import electron from 'electron';
+
+export const dynamic = 'force-dynamic'; // ⚠️⚠️⚠️ THIS IS REQUIRED TO ENSURE PAGE IS DYNAMIC, NOT PRE-BUILT
+
+export async function POST(req: NextRequest) {
+  return NextResponse.json({
+    message: 'Hello from Next.js! in response to ' + (await req.text()),
+    electron: electron.app.getVersion(),
+  });
+}
 ```
 
 ## Configure your Next.js in `next.config.ts`
