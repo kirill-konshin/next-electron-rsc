@@ -67,6 +67,6 @@ const createWindow = async () => {
 
 app.on('ready', createWindow);
 
-app.on('window-all-closed', () => app.quit()); // if (process.platform !== 'darwin')
+app.on('window-all-closed', () => app.quit()); // (process.platform !== 'darwin') &&
 
 app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && !mainWindow && createWindow());

@@ -1,4 +1,4 @@
 {
   "*.{js,jsx,ts,tsx}": "yarn eslint",
-  "*.{js,jsx,ts,tsx,css,scss,sass,less,md,yml,json,html}": "yarn prettier"
+  "!(README.md|demo/README.md).{js,jsx,ts,tsx,css,scss,sass,less,md,yml,json,html}": "yarn prettier"
 }
