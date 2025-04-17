@@ -49,8 +49,10 @@ If you're in monorepo, server will be placed one more level down, so:
 
 Next.js standalone build comes with the server, and one line there needs to be fixed in order to work from packaged executable.
 
-```jsx
-"build:fix": "sed -i '' 's/process.chdir(__dirname)//' .next/standalone/server.js"
+```json
+{
+  "build:fix": "sed -i '' 's/process.chdir(__dirname)//' .next/standalone/server.js"
+}
 ```
 
 Now let’s configure the Next.js itself:

@@ -1,11 +1,17 @@
 import Client from './client';
 
+import electron, { app, ipcMain } from 'electron';
+
 export default async function Page() {
-    const foo = process.version;
+    electron.shell?.beep();
 
     return (
         <div>
-            <Client foo={foo} />
+            <Client
+                server={`Node Version: ${process.version}, Electron Version: ${process.versions.electron}, App Version: ${app?.getVersion()}`}
+            />
         </div>
     );
 }
+
+export const dynamic = 'force-dynamic'; // ⚠️⚠️⚠️ THIS IS REQUIRED TO ENSURE PAGE IS DYNAMIC, NOT PRE-BUILT

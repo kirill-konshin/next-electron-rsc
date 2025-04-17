@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
+import electron from 'electron';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,7 @@ export async function POST(req: NextRequest) {
     const res = NextResponse.json({
         message: 'Hello from Next.js! in response to ' + (await req.text()),
         cookies: (await cookies()).getAll(),
+        electron: electron.app.getVersion(),
     });
 
     res.cookies.set('iteration', (iteration + 1).toString(), {

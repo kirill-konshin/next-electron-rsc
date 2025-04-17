@@ -3,12 +3,7 @@ import { app, BrowserWindow, Menu, protocol, session, shell } from 'electron';
 import defaultMenu from 'electron-default-menu';
 import { createHandler } from 'next-electron-rsc';
 
-const isDev = process.env.NODE_ENV === 'development';
-const appPath = app.getAppPath();
-const localhostUrl = 'http://localhost:3000'; // must match Next.js dev server
-
 let mainWindow;
-let stopIntercept;
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
@@ -16,18 +11,25 @@ process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
 process.on('SIGTERM', () => process.exit(0));
 process.on('SIGINT', () => process.exit(0));
 
-// Next.js handler
+// ⬇ Next.js handler ⬇
 
-const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
+// change to your path, make sure it's added to Electron Builder files
+const appPath = app.getAppPath();
+const dev = process.env.NODE_ENV === 'development';
+const dir = path.join(appPath, '.next', 'standalone', 'demo');
 
-const { createInterceptor } = createHandler({
-    standaloneDir,
-    localhostUrl,
+const { createInterceptor, localhostUrl } = createHandler({
+    dev,
+    dir,
     protocol,
     debug: true,
+    // ... and other Nex.js server options https://nextjs.org/docs/pages/building-your-application/configuring/custom-server
+    turbo: true, // optional
 });
 
-// Next.js handler
+let stopIntercept;
+
+// ⬆ Next.js handler ⬆
 
 const createWindow = async () => {
     mainWindow = new BrowserWindow({
@@ -39,25 +41,17 @@ const createWindow = async () => {
         },
     });
 
-    // Next.js handler
+    // ⬇ Next.js handler ⬇
 
-    if (!isDev) {
-        console.log(`[APP] Server Debugging Enabled, ${localhostUrl} will be intercepted to ${standaloneDir}`);
-        stopIntercept = createInterceptor({ session: mainWindow.webContents.session });
-    }
+    stopIntercept = await createInterceptor({ session: mainWindow.webContents.session });
 
-    // Next.js handler
+    // ⬆ Next.js handler ⬆
 
     mainWindow.once('ready-to-show', () => mainWindow.webContents.openDevTools());
 
     mainWindow.on('closed', () => {
         mainWindow = null;
         stopIntercept?.();
-    });
-
-    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url).catch((e) => console.error(e));
-        return { action: 'deny' };
     });
 
     Menu.setApplicationMenu(Menu.buildFromTemplate(defaultMenu(app, shell)));

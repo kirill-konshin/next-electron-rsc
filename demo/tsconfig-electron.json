@@ -6,7 +6,7 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["es2021", "dom", "ESNext.Promise"],
+    "lib": ["es2021", "dom", "dom.iterable", "ESNext.Promise"],
     "jsx": "react",
     "moduleResolution": "node",
     "target": "es2022",

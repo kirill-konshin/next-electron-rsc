@@ -14,45 +14,96 @@ Install depencencies:
 $ npm install next-electron-rsc next electron electron-builder
 ```
 
-Add following to your `main.js` in Electron before you create a window:
+# Add following to your `main.js` or `main.ts` in Electron
 
 ```js
-import { app, protocol } from 'electron';
+import path from 'path';
+import { app, BrowserWindow, Menu, protocol, session, shell } from 'electron';
 import { createHandler } from 'next-electron-rsc';
 
-const appPath = app.getAppPath();
-const isDev = process.env.NODE_ENV === 'development';
-const localhostUrl = 'http://localhost:3000'; // must match Next.js dev server
+let mainWindow;
+
+process.on('SIGTERM', () => process.exit(0));
+process.on('SIGINT', () => process.exit(0));
+
+// ⬇ Next.js handler ⬇
 
 // change to your path, make sure it's added to Electron Builder files
-const standaloneDir = path.join(appPath, '.next', 'standalone', 'demo');
+const appPath = app.getAppPath();
+const dev = process.env.NODE_ENV === 'development';
+const dir = path.join(appPath, '.next', 'standalone', 'demo');
 
-const { createInterceptor } = createHandler({
-  standaloneDir,
-  staticDir,
-  localhostUrl,
+const { createInterceptor, localhostUrl } = createHandler({
+  dev,
+  dir,
   protocol,
+  debug: true,
+  // ... and other Nex.js server options https://nextjs.org/docs/pages/building-your-application/configuring/custom-server
+  turbo: true, // optional
 });
-```
 
-Then add this when `mainWindow` is created:
+let stopIntercept;
 
-```js
-if (!isDev) createInterceptor({ session: mainWindow.webContents.session });
-```
+// ⬆ Next.js handler ⬆
 
-Configure your Next.js build in `next.config.js`:
-
-```js
-module.exports = {
-  output: 'standalone',
-  experimental: {
-    outputFileTracingIncludes: {
-      '*': ['public/**/*', '.next/static/**/*'],
+const createWindow = async () => {
+  mainWindow = new BrowserWindow({
+    width: 1600,
+    height: 800,
+    webPreferences: {
+      contextIsolation: true, // protect against prototype pollution
+      devTools: true,
     },
-  },
+  });
+
+  // ⬇ Next.js handler ⬇
+
+  stopIntercept = await createInterceptor({ session: mainWindow.webContents.session });
+
+  // ⬆ Next.js handler ⬆
+
+  mainWindow.once('ready-to-show', () => mainWindow.webContents.openDevTools());
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    stopIntercept?.();
+  });
+
+  // Should be last, after all listeners and menu
+
+  await app.whenReady();
+
+  await mainWindow.loadURL(localhostUrl + '/');
+
+  console.log('[APP] Loaded', localhostUrl);
 };
+
+app.on('ready', createWindow);
+
+app.on('window-all-closed', () => app.quit()); // if (process.platform !== 'darwin')
+
+app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && !mainWindow && createWindow());
 ```
+
+## Configure your Next.js in `next.config.ts`
+
+```ts
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  output: 'standalone',
+  outputFileTracingIncludes: {
+    '*': ['public/**/*', '.next/static/**/*'],
+  },
+  serverExternalPackages: ['electron'], // to prevent bundling Electron
+};
+
+if (process.env.NODE_ENV === 'development') delete nextConfig.output; // for HMR
+
+export default nextConfig;
+```
+
+## Set up build
 
 I suggest to use Electron Builder to bundle the Electron app. Just add some configuration to `electron-builder.yml`:
 
@@ -67,21 +118,24 @@ files:
 
 Replace `%YOUR_PACKAGE_NAME_IN_PACKAGE.JSON%` with what you have in `name` property in `package.json`.
 
+## Convenience scripts
+
 For convenience, you can add following scripts to `package.json`:
 
-```json
+```json5
 {
-  "scripts": {
-    "build": "yarn build:next && yarn build:electron",
-    "build:next": "next build",
-    "build:electron": "electron-builder --config electron-builder.yml",
-    "start:next": "next dev",
-    "start:electron": "electron ."
-  }
+  scripts: {
+    build: 'yarn build:next && yarn build:electron',
+    'build:next': 'next build',
+    'build:electron': 'electron-builder --config electron-builder.yml',
+    start: 'electron .',
+  },
 }
 ```
 
-The demo separates `src` of Next.js and `src-electron` of Electron, this ensures Next.js does not try to compile Electron.
+## Demo
+
+The demo separates `src` of Next.js and `src-electron` of Electron, this ensures Next.js does not try to compile Electron. Electron itself is built using TypeScript.
 
 To quickly run the demo, clone this repo and run:
 

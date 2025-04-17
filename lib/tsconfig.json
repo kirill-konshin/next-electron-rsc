@@ -2,12 +2,13 @@
   "compilerOptions": {
     "composite": true,
     "incremental": true,
+    "isolatedModules": true,
+    "isolatedDeclarations": true,
     "tsBuildInfoFile": ".tscache/cache",
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["es2021", "es2022", "dom", "ESNext.Promise"],
-    "jsx": "react",
+    "lib": ["es2022", "dom", "dom.iterable", "ESNext.Promise"],
     "moduleResolution": "node",
     "target": "es6",
     "module": "commonjs",
@@ -16,5 +17,5 @@
     "declarationDir": "build",
     "rootDir": "src"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts"]
 }

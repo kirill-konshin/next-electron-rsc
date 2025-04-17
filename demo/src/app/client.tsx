@@ -3,14 +3,16 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
-export default function Client({ foo }) {
+export default function Client({ server }) {
     const [json, setJson] = useState<string>();
     const [cookie, setCookie] = useState<string>();
 
     useEffect(() => {
+        console.log('Fetch');
         fetch('/test', { method: 'POST', body: 'Hello from frontend!' })
             .then((res) => res.json())
-            .then((text) => setJson(text));
+            .then((text) => setJson(text))
+            .catch((err) => err.toString());
     }, []);
 
     useEffect(() => {
@@ -19,7 +21,7 @@ export default function Client({ foo }) {
 
     return (
         <pre>
-            Server action: {foo}
+            Server: {server}
             <br />
             API response: {JSON.stringify(json, null, 2)}
             <br />
