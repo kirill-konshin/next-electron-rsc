@@ -283,26 +283,29 @@ export function createHandler({
                     );
 
                     for (const cookie of cookies) {
-                        const expires = cookie.expires
-                            ? cookie.expires.getTime()
-                            : cookie.maxAge
-                              ? Date.now() + cookie.maxAge * 1000
+                        const { name, value, path, domain, secure, httpOnly, expires, maxAge } = cookie;
+
+                        const expirationDate = expires
+                            ? expires.getTime()
+                            : maxAge
+                              ? Date.now() + maxAge * 1000
                               : undefined;
 
-                        if (expires < Date.now()) {
+                        if (expirationDate < Date.now()) {
                             await session.cookies.remove(request.url, cookie.name);
                             continue;
                         }
 
                         await session.cookies.set({
-                            name: cookie.name,
-                            value: cookie.value,
-                            path: cookie.path,
-                            domain: cookie.domain,
-                            secure: cookie.secure,
-                            httpOnly: cookie.httpOnly,
                             url: request.url,
-                            expirationDate: expires,
+                            expirationDate,
+                            name,
+                            value,
+                            path,
+                            domain,
+                            secure,
+                            httpOnly,
+                            maxAge,
                         } as any);
                     }
                 } catch (e) {

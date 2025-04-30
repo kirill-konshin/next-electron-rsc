@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
     "isolatedModules": true,
     "isolatedDeclarations": true,
     "tsBuildInfoFile": ".tscache/cache",

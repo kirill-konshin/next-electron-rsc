@@ -12,7 +12,7 @@ asar: false
 files:
   - build
   - '.next/standalone/demo/**/*'
-  - '.next/standalone/demo/**/node_modules/**'
+  - '!.next/standalone/demo/node_modules/electron'
 
 mac:
   category: public.app-category.developer-tools

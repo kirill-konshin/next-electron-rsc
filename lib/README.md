@@ -8,6 +8,8 @@ Please read the full article if you're interested in the topic and the mechanics
 
 This library makes it straightforward to use combination of Next.js running in Electron, the best way to develop desktop apps.
 
+![Next Electron React Server Components](public/image.png 'Next Electron React Server Components')
+
 ## Capabilities
 
 - ✅ No open ports in production mode
@@ -158,7 +160,23 @@ export default nextConfig;
 
 I suggest to use Electron Builder to bundle the Electron app. Just add some configuration to `electron-builder.yml`:
 
+### Electron Builder v26
+
 ```yaml
+asar: false
+
+files:
+  - build
+  - '.next/standalone/demo/**/*'
+  - '!.next/standalone/demo/node_modules/electron'
+```
+
+Replace `%YOUR_PACKAGE_NAME_IN_PACKAGE.JSON%` with what you have in `name` property in `package.json`.
+
+### Electron Builder v25
+
+```yaml
+asar: false
 includeSubNodeModules: true
 
 files:

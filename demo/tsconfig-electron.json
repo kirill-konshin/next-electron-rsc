@@ -1,19 +1,12 @@
 {
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
     "tsBuildInfoFile": ".tscache/cache-electron",
     "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "forceConsistentCasingInFileNames": true,
-    "lib": ["es2021", "dom", "dom.iterable", "ESNext.Promise"],
     "jsx": "react",
     "moduleResolution": "node",
     "target": "es2022",
     "module": "es2022",
     "outDir": "build",
-    "declaration": true,
-    "declarationDir": "build",
     "rootDir": "src-electron",
     "resolveJsonModule": true
   },

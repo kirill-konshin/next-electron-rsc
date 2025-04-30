@@ -1,5 +1,5 @@
 {
-  "name": "monorepo",
+  "name": "next-electron-rsc-monorepo",
   "version": "1.0.0",
   "description": "demo",
   "private": true,
@@ -18,18 +18,18 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
-    "eslint-config-next": "^15.0.2",
-    "eslint-config-prettier": "^9.1.0",
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10",
-    "next": "^15.3.0",
-    "prettier": "^3.3.3",
-    "typescript": "^5.6.3"
+    "eslint-config-next": "^15.3.1",
+    "eslint-config-prettier": "^10.1.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.1",
+    "next": "^15.3.1",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
   },
   "publishConfig": {
     "access": "restricted"
   },
-  "packageManager": "yarn@4.5.1",
+  "packageManager": "yarn@4.9.1",
   "workspaces": {
     "packages": [
       "demo",
@@ -38,6 +38,6 @@
     ]
   },
   "installConfig": {
-    "x-hoistingLimits": "dependencies"
+    "hoistingLimits": "dependencies"
   }
 }
