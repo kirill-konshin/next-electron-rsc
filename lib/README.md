@@ -23,8 +23,14 @@ This library makes it straightforward to use combination of Next.js running in E
 Install depencencies:
 
 ```bash
-$ npm install next-electron-rsc next electron electron-builder
+$ npm install next-electron-rsc next
+$ npm install electron electron-builder --save-dev
+# or
+$ yarn add next-electron-rsc next
+$ yarn add electron electron-builder --dev
 ```
+
+:warning: **Next.js need to be installed as `dependency`, not as `devDependency`. This is because Electron needs to run Next.js in same context in production mode. Electron Builder and similar libraries will not copy `devDependencies` into final app bundle.**
 
 In some cases Electron may not install itself correctly, so you may need to run:
 
@@ -33,6 +39,14 @@ $ node node_modules/electron/install.js
 ```
 
 You can also add this to `prepare` script in `package.json`. See [comment](https://github.com/kirill-konshin/next-electron-rsc/issues/10#issuecomment-2812207039).
+
+```json
+{
+  "scripts": {
+    "prepare": "node node_modules/electron/install.js"
+  }
+}
+```
 
 ## Add following to your `main.js` or `main.ts` in Electron
 
@@ -107,9 +121,11 @@ app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && !mainWind
 
 ## Ensure Next.js pages are dynamic
 
-You can now call Electron APIs directly from Next.js server side pages & route handlers: `app/page.tsx`, `app/api/route.ts` and so on.
+With the library you can call Electron APIs directly from Next.js server side pages & route handlers: `app/page.tsx`, `app/api/route.ts` and so on.
 
 Write your pages same way as usual, with only difference is that now everything "server" is running on target user machine with access to system APIs like file system, notifications, etc.
+
+### Pages
 
 ```tsx
 // app/page.tsx
@@ -122,6 +138,8 @@ export default async function Page() {
   return <div>{app.getVersion()}</div>;
 }
 ```
+
+### Route Handlers
 
 ```ts
 // app/api/route.ts
@@ -160,20 +178,20 @@ export default nextConfig;
 
 I suggest to use Electron Builder to bundle the Electron app. Just add some configuration to `electron-builder.yml`:
 
-### Electron Builder v26
+Replace `%PACKAGENAME%` with what you have in `name` property in `package.json`.
+
+### Electron Builder v26+
 
 ```yaml
 asar: false
 
 files:
   - build
-  - '.next/standalone/demo/**/*'
-  - '!.next/standalone/demo/node_modules/electron'
+  - '.next/standalone/%PACKAGENAME%/**/*'
+  - '!.next/standalone/%PACKAGENAME%/node_modules/electron'
 ```
 
-Replace `%YOUR_PACKAGE_NAME_IN_PACKAGE.JSON%` with what you have in `name` property in `package.json`.
-
-### Electron Builder v25
+### Electron Builder v25 and below
 
 ```yaml
 asar: false
@@ -181,11 +199,9 @@ includeSubNodeModules: true
 
 files:
   - build
-  - from: '.next/standalone/demo/'
-    to: '.next/standalone/demo/'
+  - from: '.next/standalone/%PACKAGENAME%/'
+    to: '.next/standalone/%PACKAGENAME%/'
 ```
-
-Replace `%YOUR_PACKAGE_NAME_IN_PACKAGE.JSON%` with what you have in `name` property in `package.json`.
 
 ## Convenience scripts
 
@@ -201,6 +217,60 @@ For convenience, you can add following scripts to `package.json`:
   }
 }
 ```
+
+## Typescript In Electron
+
+Create a separate `tsconfig-electron.json` and use it to build TS before you run Electron, it is also recommended to separate Next.js codebase in `src` and Electron entrypoint in `src-electron`.
+
+Here's an example that assumes Electron app is in `src-electron`, as in the demo::
+
+```json
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "target": "es2022",
+    "module": "es2022",
+    "outDir": "build",
+    "rootDir": "src-electron",
+    "resolveJsonModule": true
+  },
+  "include": ["src-electron/**/*.ts", "src-electron/**/*.json"]
+}
+```
+
+Install `tsc-watch`:
+
+```bash
+$ npm install tsc-watch --save-dev
+# or
+$ yarn add tsc-watch --dev
+```
+
+Then add this to your `package.json`:
+
+```json
+{
+  "scripts": {
+    "build": "yarn clean && yarn build:next && yarn build:ts && yarn build:electron",
+    "build:next": "next build",
+    "build:ts": "tsc --project tsconfig-electron.json",
+    "build:electron": "electron-builder --config electron-builder.yml",
+    "start": "tsc-watch --noClear --onSuccess 'electron .' --project tsconfig-electron.json"
+  }
+}
+```
+
+## Technical Details
+
+1. Electron entrypoint in `src-electron/index.ts` imports the library `import { createHandler } from 'next-electron-rsc';`
+2. Library imports Next.js:
+   1. As types
+   2. `require(resolve.sync('next', { basedir: dir }))` in prod mode
+   3. `require(resolve.sync('next/dist/server/lib/start-server', { basedir: dir }))` in dev mode
+
+This ensures **both Electron and Next.js are running in the same context**, so Next.js has direct access to Electron APIs.
 
 ## Demo
 
