@@ -26,9 +26,9 @@
     "@types/node": "^22.15.3",
     "@types/react": "18.3.20",
     "cross-env": "^7.0.3",
-    "electron": "36.0.0",
-    "electron-builder": "^26.0.12",
-    "next": "^15.3.1",
+    "electron": "36.3.2",
+    "electron-builder": "^26.0.15",
+    "next": "^15.3.3",
     "sharp": "^0.34.1",
     "tsc-watch": "6.2.1",
     "typescript": "^5.8.3"

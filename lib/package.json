@@ -27,8 +27,8 @@
     "@types/react-dom": "^18.3.6",
     "@types/resolve": "^1.20.6",
     "@types/set-cookie-parser": "^2.4.10",
-    "electron": "36.0.0",
-    "next": "^15.3.1",
+    "electron": "36.3.2",
+    "next": "^15.3.3",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {

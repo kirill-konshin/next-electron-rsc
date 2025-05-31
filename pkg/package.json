@@ -8,14 +8,15 @@
   "scripts": {
     "clean": "rm -rf .next out",
     "start": "next dev --turbo",
-    "build": "yarn clean && yarn build:next && yarn build:fix && yarn build:pkg",
+    "build:all": "yarn clean && yarn build:next && yarn build:fix && yarn build:pkg",
     "build:next": "next build",
     "build:fix": "sed -i '' 's/process.chdir(__dirname)//' .next/standalone/pkg/server.js",
-    "build:pkg": "cd .next/standalone/pkg && pkg . --compress=GZip --sea",
-    "open": "./out/next-pkg-web"
+    "build:pkg": "mkdir -p out && cd .next/standalone/pkg && pkg . --compress=GZip -t node18-macos-x64",
+    "open": "./out/next-pkg"
   },
   "license": "ISC",
   "dependencies": {
+    "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -23,17 +24,13 @@
     "@types/node": "^22.15.3",
     "@types/react": "18.3.20",
     "@types/react-dom": "^18.3.6",
-    "@yao-pkg/pkg": "^6.4.0",
-    "next": "^15.3.1",
+    "@yao-pkg/pkg": "^6.5.1",
     "typescript": "^5.8.3"
   },
   "pkg": {
     "assets": [
       ".next/**/*",
       "public/**/*.*"
-    ],
-    "targets": [
-      "node22-macos-arm64"
     ],
     "outputPath": "../../../out"
   }

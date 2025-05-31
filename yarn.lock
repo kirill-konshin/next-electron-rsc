@@ -70,7 +70,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@electron/asar@npm:3.4.1, @electron/asar@npm:^3.2.7":
+"@electron/asar@npm:3.4.1, @electron/asar@npm:^3.3.1":
   version: 3.4.1
   resolution: "@electron/asar@npm:3.4.1"
   dependencies:
@@ -146,9 +146,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@electron/osx-sign@npm:1.3.1":
-  version: 1.3.1
-  resolution: "@electron/osx-sign@npm:1.3.1"
+"@electron/osx-sign@npm:1.3.3":
+  version: 1.3.3
+  resolution: "@electron/osx-sign@npm:1.3.3"
   dependencies:
     compare-version: "npm:^0.1.2"
     debug: "npm:^4.3.4"
@@ -159,7 +159,7 @@ __metadata:
   bin:
     electron-osx-flat: bin/electron-osx-flat.js
     electron-osx-sign: bin/electron-osx-sign.js
-  checksum: 10/81a5c2674c7be08e7786639bc851219a3437acdc3d61efdc51dd4e80d64f94ae55e0a1e058835bdb1f803bc8e68ccdd13d6cf21356dd93d9fede798758b7473a
+  checksum: 10/9a6ebae2fa98ab682788ca7f977f1e2bfa25437f963832a925af190ef381fb5bbad0e08b2ad4952f4ab3f250c99a0acb8d5516d49d4f0e30ce8192ddf7ee268e
   languageName: node
   linkType: hard
 
@@ -188,18 +188,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@electron/universal@npm:2.0.1":
-  version: 2.0.1
-  resolution: "@electron/universal@npm:2.0.1"
+"@electron/universal@npm:2.0.3":
+  version: 2.0.3
+  resolution: "@electron/universal@npm:2.0.3"
   dependencies:
-    "@electron/asar": "npm:^3.2.7"
+    "@electron/asar": "npm:^3.3.1"
     "@malept/cross-spawn-promise": "npm:^2.0.0"
     debug: "npm:^4.3.1"
     dir-compare: "npm:^4.2.0"
     fs-extra: "npm:^11.1.1"
     minimatch: "npm:^9.0.3"
     plist: "npm:^3.1.0"
-  checksum: 10/9a4fe3a15ba0114f61219cf6a57cb51e71dd878ad8696b818f7b26e85ef5088ee714567c560e4cbd2b1088dffef5c56a83cd75d06b9976b0b190a8c2db0f59c9
+  checksum: 10/8c1c9bb0b311c39ea7aff53f9121a04a27fb3a99ffbaa9ba9924f8fba685ecbaedc2be7c75a2392e6da705535c2f043a89c340b5f7d48c286212130d344aab44
   languageName: node
   linkType: hard
 
@@ -607,6 +607,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@next/env@npm:15.3.3":
+  version: 15.3.3
+  resolution: "@next/env@npm:15.3.3"
+  checksum: 10/f71fd8b397c60b80ee2ba836152d2c8bc772f4f840b976bfd82ca0c1452539b4832a1ce6702a90da1d4edb874383944ea2662add5c0729423cd4d1cb2e58fc3d
+  languageName: node
+  linkType: hard
+
 "@next/eslint-plugin-next@npm:15.3.1":
   version: 15.3.1
   resolution: "@next/eslint-plugin-next@npm:15.3.1"
@@ -623,9 +630,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@next/swc-darwin-arm64@npm:15.3.3":
+  version: 15.3.3
+  resolution: "@next/swc-darwin-arm64@npm:15.3.3"
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
 "@next/swc-darwin-x64@npm:15.3.1":
   version: 15.3.1
   resolution: "@next/swc-darwin-x64@npm:15.3.1"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@next/swc-darwin-x64@npm:15.3.3":
+  version: 15.3.3
+  resolution: "@next/swc-darwin-x64@npm:15.3.3"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
@@ -637,9 +658,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@next/swc-linux-arm64-gnu@npm:15.3.3":
+  version: 15.3.3
+  resolution: "@next/swc-linux-arm64-gnu@npm:15.3.3"
+  conditions: os=linux & cpu=arm64 & libc=glibc
+  languageName: node
+  linkType: hard
+
 "@next/swc-linux-arm64-musl@npm:15.3.1":
   version: 15.3.1
   resolution: "@next/swc-linux-arm64-musl@npm:15.3.1"
+  conditions: os=linux & cpu=arm64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@next/swc-linux-arm64-musl@npm:15.3.3":
+  version: 15.3.3
+  resolution: "@next/swc-linux-arm64-musl@npm:15.3.3"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
@@ -651,9 +686,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@next/swc-linux-x64-gnu@npm:15.3.3":
+  version: 15.3.3
+  resolution: "@next/swc-linux-x64-gnu@npm:15.3.3"
+  conditions: os=linux & cpu=x64 & libc=glibc
+  languageName: node
+  linkType: hard
+
 "@next/swc-linux-x64-musl@npm:15.3.1":
   version: 15.3.1
   resolution: "@next/swc-linux-x64-musl@npm:15.3.1"
+  conditions: os=linux & cpu=x64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@next/swc-linux-x64-musl@npm:15.3.3":
+  version: 15.3.3
+  resolution: "@next/swc-linux-x64-musl@npm:15.3.3"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
@@ -665,9 +714,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@next/swc-win32-arm64-msvc@npm:15.3.3":
+  version: 15.3.3
+  resolution: "@next/swc-win32-arm64-msvc@npm:15.3.3"
+  conditions: os=win32 & cpu=arm64
+  languageName: node
+  linkType: hard
+
 "@next/swc-win32-x64-msvc@npm:15.3.1":
   version: 15.3.1
   resolution: "@next/swc-win32-x64-msvc@npm:15.3.1"
+  conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@next/swc-win32-x64-msvc@npm:15.3.3":
+  version: 15.3.3
+  resolution: "@next/swc-win32-x64-msvc@npm:15.3.3"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
@@ -1233,9 +1296,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@yao-pkg/pkg-fetch@npm:3.5.21":
-  version: 3.5.21
-  resolution: "@yao-pkg/pkg-fetch@npm:3.5.21"
+"@yao-pkg/pkg-fetch@npm:3.5.23":
+  version: 3.5.23
+  resolution: "@yao-pkg/pkg-fetch@npm:3.5.23"
   dependencies:
     https-proxy-agent: "npm:^5.0.0"
     node-fetch: "npm:^2.6.6"
@@ -1246,18 +1309,18 @@ __metadata:
     yargs: "npm:^16.2.0"
   bin:
     pkg-fetch: lib-es5/bin.js
-  checksum: 10/cee67f123c4068035762fbc66dbc1f40c899ec9f91f67f3948750cc5691254a09db1d16c9aa7afdd8f36792dc83a45495f902757270132c9984beba39d04e97a
+  checksum: 10/70aace41678cdd2117224d22227dcf3f64fd4eb31f95b51c7a67d1f7c3e39126fd82faaad8727775252c6c39c14b1c789a7adf239ec2c9d79c20a651f61e8249
   languageName: node
   linkType: hard
 
-"@yao-pkg/pkg@npm:^6.4.0":
-  version: 6.4.0
-  resolution: "@yao-pkg/pkg@npm:6.4.0"
+"@yao-pkg/pkg@npm:^6.5.1":
+  version: 6.5.1
+  resolution: "@yao-pkg/pkg@npm:6.5.1"
   dependencies:
     "@babel/generator": "npm:^7.23.0"
     "@babel/parser": "npm:^7.23.0"
     "@babel/types": "npm:^7.23.0"
-    "@yao-pkg/pkg-fetch": "npm:3.5.21"
+    "@yao-pkg/pkg-fetch": "npm:3.5.23"
     into-stream: "npm:^6.0.0"
     minimist: "npm:^1.2.6"
     multistream: "npm:^4.1.0"
@@ -1271,7 +1334,7 @@ __metadata:
     unzipper: "npm:^0.12.3"
   bin:
     pkg: lib-es5/bin.js
-  checksum: 10/26850ab8a9f34ac04ac3a78ade36de4d8ca3a4cc08e7e24fda297920f93de3941252d3a0fbdc307035eaaba222fc3e22f54f7cce305b81b8c8108ff885a80d5d
+  checksum: 10/2602901b8c2bdf2637e5ce41865997d5c13473af3805b33b51e9177b80aa2c948d2c5566abeda4fde25382e881c6d31bac870968af8d186e3db1bcf3b0fcdefb
   languageName: node
   linkType: hard
 
@@ -1409,17 +1472,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"app-builder-lib@npm:26.0.14":
-  version: 26.0.14
-  resolution: "app-builder-lib@npm:26.0.14"
+"app-builder-lib@npm:26.0.15":
+  version: 26.0.15
+  resolution: "app-builder-lib@npm:26.0.15"
   dependencies:
     "@develar/schema-utils": "npm:~2.6.5"
     "@electron/asar": "npm:3.4.1"
     "@electron/fuses": "npm:^1.8.0"
     "@electron/notarize": "npm:2.5.0"
-    "@electron/osx-sign": "npm:1.3.1"
+    "@electron/osx-sign": "npm:1.3.3"
     "@electron/rebuild": "npm:3.7.2"
-    "@electron/universal": "npm:2.0.1"
+    "@electron/universal": "npm:2.0.3"
     "@malept/flatpak-bundler": "npm:^0.4.0"
     "@types/fs-extra": "npm:9.0.13"
     async-exit-hook: "npm:^2.0.1"
@@ -1447,9 +1510,9 @@ __metadata:
     temp-file: "npm:^3.4.0"
     tiny-async-pool: "npm:1.3.0"
   peerDependencies:
-    dmg-builder: 26.0.14
-    electron-builder-squirrel-windows: 26.0.14
-  checksum: 10/330b8345139bb234b7b544223a00ae535650d0d51ba17a12593f83d94d917f2b9a5cacdde8a16bf4585c78288d020b36395681cda8e9c798ebb306d73f58d4cf
+    dmg-builder: 26.0.15
+    electron-builder-squirrel-windows: 26.0.15
+  checksum: 10/2d878c5c33ff87c6589c2cd19c8c2065c7a11231b60d75f98c48516c0fffb5fe81004d2a44a8dd37f82b5bdbfff0d4aa37360bc5d84d6810b09922a29a6d5e94
   languageName: node
   linkType: hard
 
@@ -2353,11 +2416,11 @@ __metadata:
     "@types/node": "npm:^22.15.3"
     "@types/react": "npm:18.3.20"
     cross-env: "npm:^7.0.3"
-    electron: "npm:36.0.0"
-    electron-builder: "npm:^26.0.12"
+    electron: "npm:36.3.2"
+    electron-builder: "npm:^26.0.15"
     electron-default-menu: "npm:^1.0.2"
     iron-session: "npm:^8.0.4"
-    next: "npm:^15.3.1"
+    next: "npm:^15.3.3"
     next-electron-rsc: "npm:*"
     react: "npm:^19.1.0"
     react-dom: "npm:^19.1.0"
@@ -2391,11 +2454,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dmg-builder@npm:26.0.14":
-  version: 26.0.14
-  resolution: "dmg-builder@npm:26.0.14"
+"dmg-builder@npm:26.0.15":
+  version: 26.0.15
+  resolution: "dmg-builder@npm:26.0.15"
   dependencies:
-    app-builder-lib: "npm:26.0.14"
+    app-builder-lib: "npm:26.0.15"
     builder-util: "npm:26.0.13"
     builder-util-runtime: "npm:9.3.2"
     dmg-license: "npm:^1.0.11"
@@ -2405,7 +2468,7 @@ __metadata:
   dependenciesMeta:
     dmg-license:
       optional: true
-  checksum: 10/a177820753592a21e2ff04c8568951d1ee6438f3941b4d28116146c6621f75e327b25a897e949b0d24f38c38c18f5d93f14145f1e58397f240d9431f36a27d38
+  checksum: 10/75d68ae25837edd428cfc519a6d4bf57d7d43c2e55bdc795f4bff14ec5e79817807baeb4b9f29fbe90bad7c57991654d38896c058669a7a633b1d45527d028e5
   languageName: node
   linkType: hard
 
@@ -2506,15 +2569,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron-builder@npm:^26.0.12":
-  version: 26.0.14
-  resolution: "electron-builder@npm:26.0.14"
+"electron-builder@npm:^26.0.15":
+  version: 26.0.15
+  resolution: "electron-builder@npm:26.0.15"
   dependencies:
-    app-builder-lib: "npm:26.0.14"
+    app-builder-lib: "npm:26.0.15"
     builder-util: "npm:26.0.13"
     builder-util-runtime: "npm:9.3.2"
     chalk: "npm:^4.1.2"
-    dmg-builder: "npm:26.0.14"
+    dmg-builder: "npm:26.0.15"
     fs-extra: "npm:^10.1.0"
     is-ci: "npm:^3.0.0"
     lazy-val: "npm:^1.0.5"
@@ -2523,7 +2586,7 @@ __metadata:
   bin:
     electron-builder: cli.js
     install-app-deps: install-app-deps.js
-  checksum: 10/da934a4925e4887d8ff85606ae812ef12e821356bb3c67dac13ee7b0c2039859cae9e4dbaa15e52af8d75f7310cec2f960eee924b4309f37ea3a85cfe9831a0e
+  checksum: 10/9cf494e1e7868874b01759509db998ecbc72c72ac8c0a7fb50095edd4db9a3900a009e1b334916061fc9266c2de7f93ed3269570a916d5d8d5a06b46e98f87f2
   languageName: node
   linkType: hard
 
@@ -2550,16 +2613,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron@npm:36.0.0":
-  version: 36.0.0
-  resolution: "electron@npm:36.0.0"
+"electron@npm:36.3.2":
+  version: 36.3.2
+  resolution: "electron@npm:36.3.2"
   dependencies:
     "@electron/get": "npm:^2.0.0"
     "@types/node": "npm:^22.7.7"
     extract-zip: "npm:^2.0.1"
   bin:
     electron: cli.js
-  checksum: 10/f5b074ad24d166d498cad6b2c4b702b4ded4a02a1274dbb1e97964a80f4df4c9472121668887ed0ef81de926637fdaec00d2f5a5ee2edca068682809cb278baa
+  checksum: 10/d2ca8fec4ad979976b70960a4bbba3ffada02a3969d2f83bd89d86471faeba9cdafc75d90191d15d99165ad16e5095b3700d6e511f8c8031810ec3098fa84770
   languageName: node
   linkType: hard
 
@@ -5066,8 +5129,8 @@ __metadata:
     "@types/resolve": "npm:^1.20.6"
     "@types/set-cookie-parser": "npm:^2.4.10"
     cookie: "npm:^1.0.2"
-    electron: "npm:36.0.0"
-    next: "npm:^15.3.1"
+    electron: "npm:36.3.2"
+    next: "npm:^15.3.3"
     resolve: "npm:^1.22.10"
     set-cookie-parser: "npm:^2.7.1"
     typescript: "npm:^5.8.3"
@@ -5085,7 +5148,7 @@ __metadata:
     "@types/node": "npm:^22.15.3"
     "@types/react": "npm:18.3.20"
     "@types/react-dom": "npm:^18.3.6"
-    "@yao-pkg/pkg": "npm:^6.4.0"
+    "@yao-pkg/pkg": "npm:^6.5.1"
     next: "npm:^15.3.1"
     react: "npm:^19.1.0"
     react-dom: "npm:^19.1.0"
@@ -5153,6 +5216,67 @@ __metadata:
   bin:
     next: dist/bin/next
   checksum: 10/bc7e432bc153cc8ff0ea12bf7c5d1163e049d53c9414053dd90143526a205bbee0315aec1f27d60c8e52ba157b5e086f0c065c3f387d3361a4125579d8a88723
+  languageName: node
+  linkType: hard
+
+"next@npm:^15.3.3":
+  version: 15.3.3
+  resolution: "next@npm:15.3.3"
+  dependencies:
+    "@next/env": "npm:15.3.3"
+    "@next/swc-darwin-arm64": "npm:15.3.3"
+    "@next/swc-darwin-x64": "npm:15.3.3"
+    "@next/swc-linux-arm64-gnu": "npm:15.3.3"
+    "@next/swc-linux-arm64-musl": "npm:15.3.3"
+    "@next/swc-linux-x64-gnu": "npm:15.3.3"
+    "@next/swc-linux-x64-musl": "npm:15.3.3"
+    "@next/swc-win32-arm64-msvc": "npm:15.3.3"
+    "@next/swc-win32-x64-msvc": "npm:15.3.3"
+    "@swc/counter": "npm:0.1.3"
+    "@swc/helpers": "npm:0.5.15"
+    busboy: "npm:1.6.0"
+    caniuse-lite: "npm:^1.0.30001579"
+    postcss: "npm:8.4.31"
+    sharp: "npm:^0.34.1"
+    styled-jsx: "npm:5.1.6"
+  peerDependencies:
+    "@opentelemetry/api": ^1.1.0
+    "@playwright/test": ^1.41.2
+    babel-plugin-react-compiler: "*"
+    react: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
+    react-dom: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
+    sass: ^1.3.0
+  dependenciesMeta:
+    "@next/swc-darwin-arm64":
+      optional: true
+    "@next/swc-darwin-x64":
+      optional: true
+    "@next/swc-linux-arm64-gnu":
+      optional: true
+    "@next/swc-linux-arm64-musl":
+      optional: true
+    "@next/swc-linux-x64-gnu":
+      optional: true
+    "@next/swc-linux-x64-musl":
+      optional: true
+    "@next/swc-win32-arm64-msvc":
+      optional: true
+    "@next/swc-win32-x64-msvc":
+      optional: true
+    sharp:
+      optional: true
+  peerDependenciesMeta:
+    "@opentelemetry/api":
+      optional: true
+    "@playwright/test":
+      optional: true
+    babel-plugin-react-compiler:
+      optional: true
+    sass:
+      optional: true
+  bin:
+    next: dist/bin/next
+  checksum: 10/287e3b24aade1763b13f95246d7df0e23d5fdde2d8c4b170360b22fabfa38184e102eb64886260e0034f4fc6979a1d47929e423d7946f5da57d306034645f6c7
   languageName: node
   linkType: hard
 

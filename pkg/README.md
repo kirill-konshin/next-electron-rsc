@@ -6,11 +6,12 @@ Users of the app just need to run the executable and open the browser.
 
 In my case I was using it to run some performance measurements on target machines with the ability to interact with measurement tool via web interface. Pretty neat.
 
+:warning: Images won't work...
+
 Start with installing of the PKG tool. The tool itself has been discontinued, so I will use a fork:
 
 ```bash
 $ npm install @yao-pkg/pkg
-
 ```
 
 Then add following to your `package.json`:
@@ -75,3 +76,8 @@ This will copy necessary static and public files into the standalone build.
 - https://medium.com/@evenchange4/deploy-a-commercial-next-js-application-with-pkg-and-docker-5c73d4af2ee
 - https://github.com/vercel/next.js/discussions/13801
 - https://github.com/nexe/nexe
+- https://github.com/nodejs/single-executable/issues/87
+
+# Demo
+
+Run `yarn build:all`.
