@@ -1,4 +1,5 @@
 import type { Protocol, Session } from 'electron';
+import { net } from 'electron';
 import type { NextConfig, default as createServerNext } from 'next';
 // import type { NextServer, NextServerOptions } from 'next/dist/server/next';
 
@@ -262,7 +263,10 @@ export function createHandler({
 
         protocol.handle('http', async (request) => {
             try {
-                assert(request.url.startsWith(localhostUrl), 'External HTTP not supported, use HTTPS');
+                if (!request.url.startsWith(localhostUrl)) {
+                    if (debug) console.log('[NEXT] Falling back to default protocol handling for:', request.url);
+                    return net.fetch(request, { bypassCustomProtocolHandlers: true });
+                }
 
                 const req = await createRequest({ socket, request, session });
                 const res = new ReadableServerResponse(req);
