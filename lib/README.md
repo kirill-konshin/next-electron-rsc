@@ -67,7 +67,7 @@ const appPath = app.getAppPath();
 const dev = process.env.NODE_ENV === 'development';
 const dir = path.join(appPath, '.next', 'standalone', 'demo');
 
-const { createInterceptor, localhostUrl } = createHandler({
+const { createInterceptor, localhostUrl, stopDevServer } = createHandler({
   dev,
   dir,
   protocol,
@@ -86,6 +86,8 @@ const createWindow = async () => {
     height: 800,
     webPreferences: {
       contextIsolation: true, // protect against prototype pollution
+      nodeIntegration: false,
+      sandbox: true,
       devTools: true,
     },
   });
@@ -117,6 +119,11 @@ app.on('ready', createWindow);
 app.on('window-all-closed', () => app.quit()); // if (process.platform !== 'darwin')
 
 app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && !mainWindow && createWindow());
+
+app.on('before-quit', () => {
+  stopIntercept?.();
+  void stopDevServer();
+});
 ```
 
 ## Ensure Next.js pages are dynamic
@@ -129,13 +136,13 @@ Write your pages same way as usual, with only difference is that now everything 
 
 ```tsx
 // app/page.tsx
-import electron, { app } from 'electron';
+import { getApp, getElectron } from 'next-electron-rsc';
 
 export const dynamic = 'force-dynamic'; // ⚠️⚠️⚠️ THIS IS REQUIRED TO ENSURE PAGE IS DYNAMIC, NOT PRE-BUILT
 
 export default async function Page() {
-  electron.shell?.beep();
-  return <div>{app.getVersion()}</div>;
+  getElectron().shell.beep();
+  return <div>{getApp().getVersion()}</div>;
 }
 ```
 
@@ -144,17 +151,20 @@ export default async function Page() {
 ```ts
 // app/api/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import electron from 'electron';
+import { getApp } from 'next-electron-rsc';
 
 export const dynamic = 'force-dynamic'; // ⚠️⚠️⚠️ THIS IS REQUIRED TO ENSURE PAGE IS DYNAMIC, NOT PRE-BUILT
 
 export async function POST(req: NextRequest) {
   return NextResponse.json({
     message: 'Hello from Next.js! in response to ' + (await req.text()),
-    electron: electron.app.getVersion(),
+    electron: getApp().getVersion(),
   });
 }
 ```
+
+`getApp()` and `getElectron()` throw a clear error when called before
+`createHandler()` or outside the Electron main process.
 
 ## Configure your Next.js in `next.config.ts`
 
@@ -264,11 +274,15 @@ Then add this to your `package.json`:
 
 ## Technical Details
 
-1. Electron entrypoint in `src-electron/index.ts` imports the library `import { createHandler } from 'next-electron-rsc';`
-2. Library imports Next.js:
-   1. As types
-   2. `require(resolve.sync('next', { basedir: dir }))` in prod mode
-   3. `require(resolve.sync('next/dist/server/lib/start-server', { basedir: dir }))` in dev mode
+1. Electron entrypoint in `src-electron/index.ts` imports the library with
+   `import { createHandler } from 'next-electron-rsc';`.
+2. Development uses Next.js' custom-server API on the configured loopback host
+   so HMR continues to work.
+3. Production registers the handler on the supplied Electron session. It
+   forwards only requests matching the configured origin and does not open a
+   TCP listener.
+4. Request bodies, streamed responses, headers, and cookies are adapted between
+   Electron's Fetch API and Node's HTTP API.
 
 This ensures **both Electron and Next.js are running in the same context**, so Next.js has direct access to Electron APIs.
 

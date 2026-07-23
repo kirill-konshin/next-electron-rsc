@@ -1,146 +1,126 @@
-import type { Protocol, Session } from 'electron';
-import type { NextConfig, default as createServerNext } from 'next';
-// import type { NextServer, NextServerOptions } from 'next/dist/server/next';
-
-// type NextConfig = any;
-type NextServer = ReturnType<typeof createServerNext>;
-type NextServerOptions = Parameters<typeof createServerNext>[0];
-
-import { IncomingMessage, ServerResponse } from 'node:http';
-import { Socket } from 'node:net';
-import { parse } from 'node:url';
-import path from 'node:path';
-import fs from 'node:fs';
 import assert from 'node:assert';
-// import { createServer } from 'node:http';
+import fs from 'node:fs';
+import { createServer, type Server } from 'node:http';
+import path from 'node:path';
+import { parse } from 'node:url';
 
+import type { Protocol, Session } from 'electron';
+import type createNextServer from 'next';
 import resolve from 'resolve';
-import { parse as parseCookie, splitCookiesString } from 'set-cookie-parser';
-import { serialize as serializeCookie } from 'cookie';
 
-async function createRequest({
-    socket,
-    request,
-    session,
-}: {
-    socket: Socket;
-    request: Request;
-    session: Session;
-}): Promise<IncomingMessage> {
-    const req = new IncomingMessage(socket);
+import { createNodeRequest, createProtocolResponse, isRequestForOrigin, syncResponseCookies } from './protocol-adapter';
+import { ELECTRON_APP_KEY, ELECTRON_MODULE_KEY } from './app';
 
-    const url = new URL(request.url);
+export { getApp, getElectron, ELECTRON_APP_KEY, ELECTRON_MODULE_KEY } from './app';
+export { isRequestForOrigin } from './protocol-adapter';
 
-    // Normal Next.js URL does not contain schema and host/port, otherwise endless loops due to butchering of schema by normalizeRepeatedSlashes in resolve-routes
-    req.url = url.pathname + (url.search || '');
-    req.method = request.method;
+type NextServer = ReturnType<typeof createNextServer>;
+type NextServerOptions = Parameters<typeof createNextServer>[0];
 
-    request.headers.forEach((value, key) => {
-        req.headers[key] = value;
-    });
+export type CreateHandlerOptions = Omit<NextServerOptions, 'conf' | 'dev' | 'dir' | 'hostname' | 'port'> & {
+    /**
+     * Kept for backward compatibility. Production interception is registered on
+     * the supplied Session, so separate Electron partitions stay isolated.
+     */
+    protocol: Protocol;
+    /** Directory containing the production standalone Next.js app. */
+    dir: string;
+    /** Next.js project directory in development. Defaults to process.cwd(). */
+    devDir?: string;
+    conf?: NextServerOptions['conf'];
+    debug?: boolean;
+    dev?: boolean;
+    hostname?: string;
+    port?: number;
+    /** Enables Turbopack for the in-process development server. */
+    turbo?: boolean;
+};
 
-    try {
-        // @see https://github.com/electron/electron/issues/39525#issue-1852825052
-        const cookies = await session.cookies.get({
-            url: request.url,
-            // domain: url.hostname,
-            // path: url.pathname,
-            // `secure: true` Cookies should not be sent via http
-            // secure: url.protocol === 'http:' ? false : undefined,
-            // theoretically not possible to implement sameSite because we don't know the url
-            // of the website that is requesting the resource
-        });
+export type HandlerController = {
+    appUrl: string;
+    /** @deprecated Use appUrl. */
+    localhostUrl: string;
+    ready: Promise<void>;
+    createInterceptor: (options: { session: Session }) => Promise<() => void>;
+    stopDevServer: () => Promise<void>;
+};
 
-        if (cookies.length) {
-            const cookiesHeader = [];
+type ActiveInterceptor = {
+    references: number;
+    stop: () => void;
+};
 
-            for (const cookie of cookies) {
-                const { name, value, ...options } = cookie;
-                cookiesHeader.push(serializeCookie(name, value)); // ...(options as any)?
-            }
-
-            req.headers.cookie = cookiesHeader.join('; ');
-        }
-    } catch (e) {
-        throw new Error('Failed to parse cookies', { cause: e });
-    }
-
-    if (request.body) {
-        req.push(Buffer.from(await request.arrayBuffer()));
-    }
-
-    req.push(null);
-    req.complete = true;
-
-    return req;
+function logError(debug: boolean, message: string, error: unknown): void {
+    if (!debug) return;
+    console.error(`[next-electron-rsc] ${message}`, error);
 }
 
-class ReadableServerResponse extends ServerResponse {
-    private responsePromise: Promise<Response>;
+function loadNext(projectDir: string): typeof createNextServer {
+    return require(resolve.sync('next', { basedir: projectDir }));
+}
 
-    constructor(req: IncomingMessage) {
-        super(req);
+function closeServer(server: Server | undefined): Promise<void> {
+    if (!server?.listening) return Promise.resolve();
 
-        this.responsePromise = new Promise<Response>((resolve, reject) => {
-            const readableStream = new ReadableStream({
-                start: (controller) => {
-                    let onData;
-
-                    this.on(
-                        'data',
-                        (onData = (chunk) => {
-                            controller.enqueue(chunk);
-                        }),
-                    );
-
-                    this.once('end', (chunk) => {
-                        controller.enqueue(chunk);
-                        controller.close();
-                        this.off('data', onData);
-                    });
-                },
-                pull: (controller) => {
-                    this.emit('drain');
-                },
-                cancel: () => {},
-            });
-
-            this.once('writeHead', (statusCode) => {
-                resolve(
-                    new Response(readableStream, {
-                        status: statusCode,
-                        statusText: this.statusMessage,
-                        headers: this.getHeaders() as any,
-                    }),
-                );
-            });
+    return new Promise((resolveClose, rejectClose) => {
+        server.close((error) => {
+            if (error) rejectClose(error);
+            else resolveClose();
         });
+        server.closeAllConnections?.();
+    });
+}
+
+function findServerDirectories(baseDir: string, depth = 0): string[] {
+    if (depth > 5 || !fs.existsSync(baseDir)) return [];
+    if (fs.existsSync(path.join(baseDir, 'server.js'))) return [baseDir];
+
+    return fs
+        .readdirSync(baseDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory() && entry.name !== 'node_modules' && !entry.name.startsWith('.'))
+        .flatMap((entry) => findServerDirectories(path.join(baseDir, entry.name), depth + 1));
+}
+
+/**
+ * Resolve the app directory produced by `output: "standalone"` across both
+ * single-package and monorepo tracing layouts.
+ */
+export function resolveStandaloneDir(rootDir: string, packageName?: string): string {
+    const standaloneRoot = path.resolve(rootDir, '.next', 'standalone');
+    const preferred = packageName ? path.join(standaloneRoot, packageName) : undefined;
+
+    if (preferred && fs.existsSync(path.join(preferred, 'server.js'))) return preferred;
+    if (fs.existsSync(path.join(standaloneRoot, 'server.js'))) return standaloneRoot;
+
+    const matches = findServerDirectories(standaloneRoot);
+    if (matches.length === 1) return matches[0];
+    if (matches.length === 0) {
+        throw new Error(
+            `Next.js standalone server not found under ${standaloneRoot}. Run "next build" with output: "standalone".`,
+        );
     }
 
-    write(chunk: any, ...args): boolean {
-        this.emit('data', chunk);
-        return super.write(chunk, ...args);
-    }
+    throw new Error(
+        `Multiple Next.js standalone servers found under ${standaloneRoot}: ${matches.join(', ')}. Pass a packageName.`,
+    );
+}
 
-    end(chunk: any, ...args): this {
-        this.emit('end', chunk);
-        return super.end(chunk, ...args);
-    }
-
-    writeHead(statusCode: number, ...args: any): this {
-        this.emit('writeHead', statusCode);
-        return super.writeHead(statusCode, ...args);
-    }
-
-    getResponse() {
-        return this.responsePromise;
+function exposeElectronGlobals(): void {
+    try {
+        const electron = require('electron');
+        (globalThis as Record<string, unknown>)[ELECTRON_APP_KEY] = electron.app;
+        (globalThis as Record<string, unknown>)[ELECTRON_MODULE_KEY] = electron;
+    } catch {
+        // Expected in unit tests and other non-Electron processes.
     }
 }
 
 /**
- * https://nextjs.org/docs/pages/building-your-application/configuring/custom-server
- * https://github.com/vercel/next.js/pull/68167/files#diff-d0d8b7158bcb066cdbbeb548a29909fe8dc4e98f682a6d88654b1684e523edac
- * https://github.com/vercel/next.js/blob/canary/examples/custom-server/server.ts
+ * Run Next.js in the Electron main process.
+ *
+ * Development uses Next's documented custom-server API and a loopback-only
+ * listener for HMR. Production has no listener: the Electron Session protocol
+ * forwards only this app's virtual HTTP origin directly to Next's handler.
  */
 export function createHandler({
     protocol,
@@ -149,184 +129,180 @@ export function createHandler({
     hostname = 'localhost',
     port = 3000,
     dir,
+    devDir = process.cwd(),
+    turbo = true,
     ...nextOptions
-}: Omit<NextServerOptions, 'conf'> & {
-    conf?: NextServerOptions['conf'];
-    protocol: Protocol;
-    debug?: boolean;
-}): {
-    localhostUrl: string;
-    createInterceptor: ({ session }: { session: Session }) => Promise<() => void>;
-} {
-    assert(dir, 'dir is required');
+}: CreateHandlerOptions): HandlerController {
     assert(protocol, 'protocol is required');
+    assert(dir, 'dir is required');
     assert(hostname, 'hostname is required');
-    assert(port, 'port is required');
+    assert(Number.isInteger(port) && port > 0 && port <= 65_535, 'port must be between 1 and 65535');
 
-    dir = dev ? process.cwd() : dir;
+    exposeElectronGlobals();
+
+    const appUrl = new URL(`http://${hostname}:${port}`).origin;
+    const activeInterceptors = new Map<Session, ActiveInterceptor>();
+    let devServer: Server | undefined;
+    let nextApp: NextServer;
+    let requestHandler: ReturnType<NextServer['getRequestHandler']>;
 
     if (debug) {
-        console.log('Next.js handler', { dev, dir, hostname, port, debug });
+        console.log('[next-electron-rsc] createHandler', {
+            appUrl,
+            dev,
+            dir: dev ? devDir : dir,
+            turbo,
+        });
     }
 
-    const localhostUrl = `http://${hostname}:${port}`;
-
-    const serverOptions: Omit<NextServerOptions, 'conf'> & { isDev: boolean } = {
-        ...nextOptions,
-        dir,
-        dev,
-        hostname,
-        port,
-        isDev: dev,
-    };
+    let ready: Promise<void>;
 
     if (dev) {
-        //FIXME Closes window when restarting server
-        const server = require(resolve.sync('next/dist/server/lib/start-server', { basedir: dir }));
-        const preparePromise = server.startServer(serverOptions);
+        if (turbo) process.env.TURBOPACK = '1';
+        // Next 16.2+ uses this marker to avoid loading production server files
+        // when its development server runs inside another process.
+        process.env.__NEXT_DEV_SERVER = '1';
 
-        //FIXME Not reloading by Next.js automatically, try Nodemon https://github.com/vercel/next.js/tree/canary/examples/custom-server
-        // app.prepare().then(() => {
-        //     createServer((req, res) => {
-        //         try {
-        //             const parsedUrl = parse(req.url!, true);
-        //             handler(req, res, parsedUrl);
-        //         } catch (err) {
-        //             console.error('Error occurred handling', req.url, err);
-        //             res.statusCode = 500;
-        //             res.end('internal server error');
-        //         }
-        //     })
-        //         .once('error', (err) => {
-        //             console.error(err);
-        //             rej(err);
-        //         })
-        //         .listen(port, () => {
-        //             res();
-        //             console.log(`> Server listening at ${localhostUrl}`);
-        //         });
-        // }).then(() => waitOn({resources: [localhostUrl]}).then(res);
+        const next = loadNext(devDir);
+        nextApp = next({
+            ...nextOptions,
+            dev: true,
+            dir: devDir,
+            hostname,
+            port,
+        });
+        requestHandler = nextApp.getRequestHandler();
 
-        // Early exit before rest of prod stuff
-        return {
-            localhostUrl,
-            createInterceptor: async ({ session }: { session: Session }) => {
-                assert(session, 'Session is required');
-                await preparePromise;
-                if (debug) console.log(`Server Intercept Disabled, ${localhostUrl} is served by Next.js`);
-                return () => {};
-            },
+        ready = nextApp.prepare().then(
+            () =>
+                new Promise<void>((resolveReady, rejectReady) => {
+                    devServer = createServer((request, response) => {
+                        Promise.resolve(requestHandler(request, response, parse(request.url ?? '/', true))).catch(
+                            (error: unknown) => {
+                                logError(debug, 'development request failed', error);
+                                if (!response.headersSent) response.statusCode = 500;
+                                response.end('Internal Server Error');
+                            },
+                        );
+                    });
+                    devServer.once('error', rejectReady);
+                    devServer.listen(port, hostname, () => {
+                        devServer?.off('error', rejectReady);
+                        resolveReady();
+                    });
+                }),
+        );
+    } else {
+        assert(fs.existsSync(dir), `standalone directory does not exist: ${dir}`);
+        const requiredServerFiles = path.join(dir, '.next', 'required-server-files.json');
+        assert(fs.existsSync(requiredServerFiles), `required-server-files.json does not exist: ${requiredServerFiles}`);
+
+        const requiredConfig = JSON.parse(fs.readFileSync(requiredServerFiles, 'utf8')) as {
+            config?: NextServerOptions['conf'];
         };
-    }
-
-    const next = require(resolve.sync('next', { basedir: dir }));
-
-    // @see https://github.com/vercel/next.js/issues/64031#issuecomment-2078708340
-    const config = require(path.join(dir, '.next', 'required-server-files.json')).config as NextConfig;
-    process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify({ ...config, ...nextOptions?.conf });
-
-    const app = next(serverOptions) as NextServer;
-
-    const handler = app.getRequestHandler();
-
-    const preparePromise = app.prepare().catch((err: Error) => {
-        console.error('Cannot prepare Next.js server', err.stack);
-        throw err;
-    });
-
-    protocol.registerSchemesAsPrivileged([
-        {
-            scheme: 'http',
-            privileges: {
-                standard: true,
-                secure: true,
-                supportFetchAPI: true,
-            },
-        },
-    ]);
-
-    async function createInterceptor({ session }: { session: Session }) {
-        assert(session, 'Session is required');
-        assert(fs.existsSync(dir), 'dir does not exist');
-
-        if (debug) console.log(`Server Intercept Enabled, ${localhostUrl} will be intercepted by ${dir}`);
-
-        const socket = new Socket();
-
-        const closeSocket = () => socket.end();
-
-        process.on('SIGTERM', closeSocket);
-        process.on('SIGINT', closeSocket);
-
-        await preparePromise;
-
-        protocol.handle('http', async (request) => {
-            try {
-                assert(request.url.startsWith(localhostUrl), 'External HTTP not supported, use HTTPS');
-
-                const req = await createRequest({ socket, request, session });
-                const res = new ReadableServerResponse(req);
-                const url = parse(req.url, true);
-
-                handler(req, res, url); //TODO Try/catch?
-
-                const response = await res.getResponse();
-
-                try {
-                    // @see https://github.com/electron/electron/issues/30717
-                    // @see https://github.com/electron/electron/issues/39525
-                    const cookies = parseCookie(
-                        response.headers.getSetCookie().reduce((r, c) => {
-                            // @see https://github.com/nfriedly/set-cookie-parser?tab=readme-ov-file#usage-in-react-native-and-with-some-other-fetch-implementations
-                            return [...r, ...splitCookiesString(c)];
-                        }, []),
-                    );
-
-                    for (const cookie of cookies) {
-                        const { name, value, path, domain, secure, httpOnly, expires, maxAge } = cookie;
-
-                        const expirationDate = expires
-                            ? expires.getTime()
-                            : maxAge
-                              ? Date.now() + maxAge * 1000
-                              : undefined;
-
-                        if (expirationDate < Date.now()) {
-                            await session.cookies.remove(request.url, cookie.name);
-                            continue;
-                        }
-
-                        await session.cookies.set({
-                            url: request.url,
-                            expirationDate,
-                            name,
-                            value,
-                            path,
-                            domain,
-                            secure,
-                            httpOnly,
-                            maxAge,
-                        } as any);
-                    }
-                } catch (e) {
-                    throw new Error('Failed to set cookies', { cause: e });
-                }
-
-                if (debug) console.log('[NEXT] Handler', request.url, response.status);
-                return response;
-            } catch (e) {
-                if (debug) console.log('[NEXT] Error', e);
-                return new Response(e.message, { status: 500 });
-            }
+        process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify({
+            ...requiredConfig.config,
+            ...nextOptions.conf,
         });
 
-        return function stopIntercept() {
-            protocol.unhandle('http');
-            process.off('SIGTERM', closeSocket);
-            process.off('SIGINT', closeSocket);
-            closeSocket();
+        const next = loadNext(dir);
+        nextApp = next({
+            ...nextOptions,
+            dev: false,
+            dir,
+            hostname,
+            port,
+        });
+        requestHandler = nextApp.getRequestHandler();
+        ready = nextApp.prepare();
+    }
+
+    async function createInterceptor({ session }: { session: Session }): Promise<() => void> {
+        assert(session, 'session is required');
+        await ready;
+
+        if (dev) return () => {};
+
+        const existing = activeInterceptors.get(session);
+        if (existing) {
+            existing.references += 1;
+            let stopped = false;
+            return () => {
+                if (stopped) return;
+                stopped = true;
+                existing.references -= 1;
+                if (existing.references === 0) existing.stop();
+            };
+        }
+
+        const sessionProtocol = session.protocol;
+        if (await sessionProtocol.isProtocolHandled('http')) {
+            throw new Error('The supplied Electron session already has an HTTP protocol handler.');
+        }
+
+        const handleRequest = async (request: Request): Promise<Response> => {
+            if (!isRequestForOrigin(request.url, appUrl)) {
+                return new Response('Blocked external HTTP request', {
+                    status: 403,
+                    headers: { 'content-type': 'text/plain; charset=utf-8' },
+                });
+            }
+
+            try {
+                const { request: nodeRequest, socket } = await createNodeRequest({ request, session });
+                const nodeResponse = createProtocolResponse(nodeRequest);
+                nodeResponse.once('finish', () => socket.destroy());
+
+                Promise.resolve(requestHandler(nodeRequest, nodeResponse, parse(nodeRequest.url ?? '/', true))).catch(
+                    (error: unknown) => nodeResponse.fail(error),
+                );
+
+                const response = await nodeResponse.response();
+                await syncResponseCookies({ request, response, session }).catch((error: unknown) => {
+                    logError(debug, 'failed to persist response cookies', error);
+                });
+
+                if (debug) console.log('[next-electron-rsc]', request.method, request.url, response.status);
+                return response;
+            } catch (error) {
+                logError(debug, `request failed: ${request.url}`, error);
+                return new Response(debug && error instanceof Error ? error.message : 'Internal Server Error', {
+                    status: 500,
+                    headers: { 'content-type': 'text/plain; charset=utf-8' },
+                });
+            }
+        };
+
+        await sessionProtocol.handle('http', handleRequest);
+
+        const active: ActiveInterceptor = {
+            references: 1,
+            stop: () => {
+                if (activeInterceptors.get(session) !== active) return;
+                activeInterceptors.delete(session);
+                sessionProtocol.unhandle('http');
+            },
+        };
+        activeInterceptors.set(session, active);
+
+        let stopped = false;
+        return () => {
+            if (stopped) return;
+            stopped = true;
+            active.references -= 1;
+            if (active.references === 0) active.stop();
         };
     }
 
-    return { createInterceptor, localhostUrl };
+    return {
+        appUrl,
+        localhostUrl: appUrl,
+        ready,
+        createInterceptor,
+        stopDevServer: async () => {
+            for (const interceptor of [...activeInterceptors.values()]) interceptor.stop();
+            await closeServer(devServer);
+            await nextApp?.close?.();
+        },
+    };
 }

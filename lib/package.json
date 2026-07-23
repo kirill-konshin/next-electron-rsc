@@ -3,23 +3,26 @@
   "version": "0.3.0",
   "description": "Next.js + Electron + React Server Components",
   "main": "build/index.js",
-  "main:src": "build/index.tsx",
-  "source": "src/index.tsx",
+  "main:src": "src/index.ts",
+  "source": "src/index.ts",
   "types": "build/index.d.ts",
   "x-module": "build/index.js",
   "x-jsnext:main": "build/index.js",
+  "files": [
+    "build",
+    "README.md"
+  ],
   "scripts": {
-    "clean": "rm -rf build .tscache",
+    "clean": "node -e \"const fs=require('node:fs'); for (const path of ['build','.tscache']) fs.rmSync(path,{recursive:true,force:true})\"",
     "build": "tsc --build .",
+    "test": "yarn build && node --test test/*.test.cjs",
     "start": "yarn build --watch --preserveWatchOutput",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn test"
   },
   "license": "MIT",
   "dependencies": {
-    "cookie": "^1.0.2",
     "resolve": "^1.22.10",
-    "set-cookie-parser": "^2.7.1",
-    "wait-on": "^8.0.3"
+    "set-cookie-parser": "^2.7.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
