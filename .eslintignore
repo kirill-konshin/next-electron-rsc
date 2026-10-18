@@ -1,9 +1,0 @@
-.husky
-.yarn
-build
-node_modules
-public
-stats
-dist
-out
-.next

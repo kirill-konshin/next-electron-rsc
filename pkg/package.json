@@ -4,19 +4,18 @@
   "description": "demo",
   "private": true,
   "main": "next.config.ts",
-  "bin": "server.js",
+  "bin": "pkgServer.cjs",
   "scripts": {
     "clean": "rm -rf .next out",
     "start": "next dev --turbo",
-    "build:all": "yarn clean && yarn build:next && yarn build:fix && yarn build:pkg",
+    "build:all": "yarn clean && yarn build:next && yarn build:pkg",
     "build:next": "next build",
-    "build:fix": "sed -i '' 's/process.chdir(__dirname)//' .next/standalone/pkg/server.js",
-    "build:pkg": "mkdir -p out && cd .next/standalone/pkg && pkg . --compress=GZip -t node18-macos-x64",
+    "build:pkg": "mkdir -p out && cd .next/standalone/pkg && pkg . --compress=GZip -t node26-macos-arm64",
     "open": "./out/next-pkg"
   },
   "license": "ISC",
   "dependencies": {
-    "next": "^15.3.1",
+    "next": "^15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -24,8 +23,8 @@
     "@types/node": "^22.15.3",
     "@types/react": "18.3.20",
     "@types/react-dom": "^18.3.6",
-    "@yao-pkg/pkg": "^6.5.1",
-    "typescript": "^5.8.3"
+    "@yao-pkg/pkg": "^6.23.0",
+    "typescript": "^6.0.3"
   },
   "pkg": {
     "assets": [

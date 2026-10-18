@@ -7,11 +7,11 @@
   "main": "build/index.js",
   "scripts": {
     "clean": "rm -rf build dist .tscache .next out",
-    "build": "yarn clean && yarn build:next && yarn build:ts && yarn build:electron",
+    "build": "yarn clean && yarn build:next && yarn build:main && yarn build:electron",
     "build:next": "next build",
-    "build:ts": "tsc --project tsconfig-electron.json",
+    "build:main": "vp pack",
     "build:electron": "electron-builder --config electron-builder.yml",
-    "start": "tsc-watch --noClear --onSuccess 'electron .' --project tsconfig-electron.json",
+    "start": "vp pack --watch",
     "open": "./dist/mac-arm64/Next\\ Electron\\ RSC.app/Contents/MacOS/Next\\ Electron\\ RSC"
   },
   "license": "ISC",
@@ -30,7 +30,7 @@
     "electron-builder": "^26.0.15",
     "next": "^15.3.3",
     "sharp": "^0.34.1",
-    "tsc-watch": "6.2.1",
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.3",
+    "vite-plus": "^1.3.0"
   }
 }

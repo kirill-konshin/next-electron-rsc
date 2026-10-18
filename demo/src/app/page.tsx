@@ -1,6 +1,6 @@
-import Client from './client';
+import electron, { app } from 'electron';
 
-import electron, { app, ipcMain } from 'electron';
+import { Client } from './client';
 
 export default async function Page() {
     electron.shell?.beep();

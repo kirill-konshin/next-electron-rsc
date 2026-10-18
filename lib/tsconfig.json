@@ -1,18 +1,20 @@
 {
   "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
     "isolatedModules": true,
     "isolatedDeclarations": true,
-    "tsBuildInfoFile": ".tscache/cache",
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "forceConsistentCasingInFileNames": true,
-    "lib": ["es2022", "dom", "dom.iterable", "ESNext.Promise"],
-    "moduleResolution": "node",
-    "target": "es6",
-    "module": "commonjs",
-    "outDir": "build",
     "declaration": true,
-    "declarationDir": "build",
+    "noEmit": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "target": "ES2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    /* TypeScript 6 includes no @types package by default */
+    "types": ["node"],
     "rootDir": "src"
   },
   "include": ["src/**/*.ts"]

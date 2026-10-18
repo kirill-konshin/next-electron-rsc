@@ -42,9 +42,9 @@ You can also add this to `prepare` script in `package.json`. See [comment](https
 
 ```json
 {
-  "scripts": {
-    "prepare": "node node_modules/electron/install.js"
-  }
+    "scripts": {
+        "prepare": "node node_modules/electron/install.js"
+    }
 }
 ```
 
@@ -68,12 +68,12 @@ const dev = process.env.NODE_ENV === 'development';
 const dir = path.join(appPath, '.next', 'standalone', 'demo');
 
 const { createInterceptor, localhostUrl } = createHandler({
-  dev,
-  dir,
-  protocol,
-  debug: true,
-  // ... and other Nex.js server options https://nextjs.org/docs/pages/building-your-application/configuring/custom-server
-  turbo: true, // optional
+    dev,
+    dir,
+    protocol,
+    debug: true,
+    // ... and other Nex.js server options https://nextjs.org/docs/pages/building-your-application/configuring/custom-server
+    turbo: true, // optional
 });
 
 let stopIntercept;
@@ -81,35 +81,35 @@ let stopIntercept;
 // ⬆ Next.js handler ⬆
 
 const createWindow = async () => {
-  mainWindow = new BrowserWindow({
-    width: 1600,
-    height: 800,
-    webPreferences: {
-      contextIsolation: true, // protect against prototype pollution
-      devTools: true,
-    },
-  });
+    mainWindow = new BrowserWindow({
+        width: 1600,
+        height: 800,
+        webPreferences: {
+            contextIsolation: true, // protect against prototype pollution
+            devTools: true,
+        },
+    });
 
-  // ⬇ Next.js handler ⬇
+    // ⬇ Next.js handler ⬇
 
-  stopIntercept = await createInterceptor({ session: mainWindow.webContents.session });
+    stopIntercept = await createInterceptor({ session: mainWindow.webContents.session });
 
-  // ⬆ Next.js handler ⬆
+    // ⬆ Next.js handler ⬆
 
-  mainWindow.once('ready-to-show', () => mainWindow.webContents.openDevTools());
+    mainWindow.once('ready-to-show', () => mainWindow.webContents.openDevTools());
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-    stopIntercept?.();
-  });
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+        stopIntercept?.();
+    });
 
-  // Should be last, after all listeners and menu
+    // Should be last, after all listeners and menu
 
-  await app.whenReady();
+    await app.whenReady();
 
-  await mainWindow.loadURL(localhostUrl + '/');
+    await mainWindow.loadURL(localhostUrl + '/');
 
-  console.log('[APP] Loaded', localhostUrl);
+    console.log('[APP] Loaded', localhostUrl);
 };
 
 app.on('ready', createWindow);
@@ -134,8 +134,8 @@ import electron, { app } from 'electron';
 export const dynamic = 'force-dynamic'; // ⚠️⚠️⚠️ THIS IS REQUIRED TO ENSURE PAGE IS DYNAMIC, NOT PRE-BUILT
 
 export default async function Page() {
-  electron.shell?.beep();
-  return <div>{app.getVersion()}</div>;
+    electron.shell?.beep();
+    return <div>{app.getVersion()}</div>;
 }
 ```
 
@@ -149,10 +149,10 @@ import electron from 'electron';
 export const dynamic = 'force-dynamic'; // ⚠️⚠️⚠️ THIS IS REQUIRED TO ENSURE PAGE IS DYNAMIC, NOT PRE-BUILT
 
 export async function POST(req: NextRequest) {
-  return NextResponse.json({
-    message: 'Hello from Next.js! in response to ' + (await req.text()),
-    electron: electron.app.getVersion(),
-  });
+    return NextResponse.json({
+        message: 'Hello from Next.js! in response to ' + (await req.text()),
+        electron: electron.app.getVersion(),
+    });
 }
 ```
 
@@ -162,11 +162,11 @@ export async function POST(req: NextRequest) {
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
-  outputFileTracingIncludes: {
-    '*': ['public/**/*', '.next/static/**/*'],
-  },
-  serverExternalPackages: ['electron'], // to prevent bundling Electron
+    output: 'standalone',
+    outputFileTracingIncludes: {
+        '*': ['public/**/*', '.next/static/**/*'],
+    },
+    serverExternalPackages: ['electron'], // to prevent bundling Electron
 };
 
 if (process.env.NODE_ENV === 'development') delete nextConfig.output; // for HMR
@@ -186,9 +186,12 @@ Replace `%PACKAGENAME%` with what you have in `name` property in `package.json`.
 asar: false
 
 files:
-  - build
-  - '.next/standalone/%PACKAGENAME%/**/*'
-  - '!.next/standalone/%PACKAGENAME%/node_modules/electron'
+    - build
+    - '.next/standalone/%PACKAGENAME%/**/*'
+    - '!.next/standalone/%PACKAGENAME%/node_modules/electron'
+    # monorepo with hoisted dependencies: Next.js traces them next to the app folder
+    - '.next/standalone/node_modules/**/*'
+    - '!.next/standalone/node_modules/electron'
 ```
 
 ### Electron Builder v25 and below
@@ -198,9 +201,9 @@ asar: false
 includeSubNodeModules: true
 
 files:
-  - build
-  - from: '.next/standalone/%PACKAGENAME%/'
-    to: '.next/standalone/%PACKAGENAME%/'
+    - build
+    - from: '.next/standalone/%PACKAGENAME%/'
+      to: '.next/standalone/%PACKAGENAME%/'
 ```
 
 ## Convenience scripts
@@ -209,56 +212,84 @@ For convenience, you can add following scripts to `package.json`:
 
 ```json
 {
-  "scripts": {
-    "build": "yarn build:next && yarn build:electron",
-    "build:next": "next build",
-    "build:electron": "electron-builder --config electron-builder.yml",
-    "start": "electron ."
-  }
+    "scripts": {
+        "build": "yarn build:next && yarn build:electron",
+        "build:next": "next build",
+        "build:electron": "electron-builder --config electron-builder.yml",
+        "start": "electron ."
+    }
 }
 ```
 
 ## Typescript In Electron
 
-Create a separate `tsconfig-electron.json` and use it to build TS before you run Electron, it is also recommended to separate Next.js codebase in `src` and Electron entrypoint in `src-electron`.
+Keep the Electron entrypoint in `src-electron`, apart from the Next.js code in `src`, and build it with [Vite+](https://viteplus.dev) `vp pack`. In development `vp pack --watch` is also the runner: it restarts Electron after every build of the entrypoint and when `next.config.ts` changes, since Next.js applies a config change only on a restart (as `next dev` does).
 
-Here's an example that assumes Electron app is in `src-electron`, as in the demo::
+`tsconfig-electron.json`:
 
 ```json
 {
-  "compilerOptions": {
-    "esModuleInterop": true,
-    "jsx": "react",
-    "moduleResolution": "node",
-    "target": "es2022",
-    "module": "es2022",
-    "outDir": "build",
-    "rootDir": "src-electron",
-    "resolveJsonModule": true
-  },
-  "include": ["src-electron/**/*.ts", "src-electron/**/*.json"]
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "target": "es2022",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "types": ["node"]
+    },
+    "include": ["src-electron/**/*.ts"]
 }
 ```
 
-Install `tsc-watch`:
+`vite.config.ts`:
 
-```bash
-$ npm install tsc-watch --save-dev
-# or
-$ yarn add tsc-watch --dev
+```ts
+import path from 'node:path';
+
+import { defineConfig } from 'vite-plus';
+
+const isWatch = process.argv.includes('--watch');
+
+// not in the main process module graph; the `watch` option cannot list them, `--watch` overrides it with `true`
+const restartOn = ['next.config.ts'].map((file) => path.resolve(import.meta.dirname, file));
+
+export default defineConfig({
+    pack: {
+        entry: ['src-electron/index.ts'],
+        outDir: 'build',
+        format: 'esm',
+        platform: 'node',
+        fixedExtension: false,
+        dts: false,
+        deps: { neverBundle: true },
+        tsconfig: 'tsconfig-electron.json',
+        ...(isWatch && {
+            plugins: [
+                {
+                    name: 'restart-on',
+                    buildStart() {
+                        for (const file of restartOn) this.addWatchFile(file);
+                    },
+                },
+            ],
+            // tsdown stops the previous process before each run
+            onSuccess: 'cross-env NODE_ENV=development electron .',
+        }),
+    },
+});
 ```
 
-Then add this to your `package.json`:
+Then add this to your `package.json` (`"type": "module"`, `"main": "build/index.js"`):
 
 ```json
 {
-  "scripts": {
-    "build": "yarn clean && yarn build:next && yarn build:ts && yarn build:electron",
-    "build:next": "next build",
-    "build:ts": "tsc --project tsconfig-electron.json",
-    "build:electron": "electron-builder --config electron-builder.yml",
-    "start": "tsc-watch --noClear --onSuccess 'electron .' --project tsconfig-electron.json"
-  }
+    "scripts": {
+        "build": "yarn clean && yarn build:next && yarn build:main && yarn build:electron",
+        "build:next": "next build",
+        "build:main": "vp pack",
+        "build:electron": "electron-builder --config electron-builder.yml",
+        "start": "vp pack --watch"
+    }
 }
 ```
 
@@ -266,11 +297,13 @@ Then add this to your `package.json`:
 
 1. Electron entrypoint in `src-electron/index.ts` imports the library `import { createHandler } from 'next-electron-rsc';`
 2. Library imports Next.js:
-   1. As types
-   2. `require(resolve.sync('next', { basedir: dir }))` in prod mode
-   3. `require(resolve.sync('next/dist/server/lib/start-server', { basedir: dir }))` in dev mode
+    1. As types
+    2. `require(resolve.sync('next', { basedir: dir }))` in prod mode
+    3. The same `next()` with an HTTP server on `localhostUrl` in dev mode, for HMR; a `next.config.*` change needs an Electron restart (see the dev runner above)
 
 This ensures **both Electron and Next.js are running in the same context**, so Next.js has direct access to Electron APIs.
+
+In production `createInterceptor` handles `http` only for the session it is given, and only for `localhostUrl`. Other `http://` requests from the browser get `403`: fetch external HTTP from the Next.js server.
 
 ## Demo
 

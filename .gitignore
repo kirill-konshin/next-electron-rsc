@@ -1,18 +1,36 @@
 .DS_Store
-.idea
-.vscode
+*.tsbuildinfo
+.tscache
+.turbo
+.nx
+.next
+build
+coverage
+dist
+dist-*
+next-env.d.ts
 node_modules
+npm-debug*
+out
+*storybook.log
+vite-env.d.ts
+yarn-error*
+.yarnrc.local.yml
+.vite-hooks/_
 
+# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# project-specific
+.idea/*
+!.idea/externalDependencies.xml
+.vscode
 stats
 Users
 config.json
-
-# https://yarnpkg.com/advanced/qa#which-files-should-be-gitignored
-.yarn/*
-!.yarn/patches
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-!.yarn/versions
-.pnp.*
-yarn-error.log

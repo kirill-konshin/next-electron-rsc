@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { getIronSession } from 'iron-session';
 import electron from 'electron';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 const password = '3YiABv0hXEjwD1Pof36HJUpW4HW7dQAG'; // random garbage for demo
 
 export async function POST(req: NextRequest) {
-    const iteration = parseInt(req.cookies.get('iteration')?.value, 10) || 0;
+    const iteration = parseInt(req.cookies.get('iteration')?.value ?? '', 10) || 0;
 
     const session = await getIronSession(await cookies(), { password, cookieName: 'iron' });
     session['username'] = 'Alison';

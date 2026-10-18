@@ -2,13 +2,18 @@
   "compilerOptions": {
     "tsBuildInfoFile": ".tscache/cache-electron",
     "esModuleInterop": true,
+    "strict": false,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
     "jsx": "react",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "target": "es2022",
-    "module": "es2022",
+    "module": "esnext",
     "outDir": "build",
     "rootDir": "src-electron",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    /* TypeScript 6 includes no @types package by default */
+    "types": ["node"]
   },
   "include": ["src-electron/**/*.ts", "src-electron/**/*.json"]
 }

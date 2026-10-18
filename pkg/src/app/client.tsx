@@ -1,15 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import Image from 'next/image';
 
-export default function Client({ foo }) {
+export function Client({ foo }) {
     const [text, setText] = useState<string>();
 
     useEffect(() => {
-        fetch('/test', { method: 'POST', body: 'Hello from frontend!' })
-            .then((res) => res.text())
-            .then((text) => setText(text));
+        void (async () => {
+            const res = await fetch('/test', { method: 'POST', body: 'Hello from frontend!' });
+            setText(await res.text());
+        })();
     }, []);
 
     return (

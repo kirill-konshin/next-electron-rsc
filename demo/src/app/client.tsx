@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import Image from 'next/image';
+
 import { getFromServer } from './action';
 
-export default function Client({ server }) {
+export function Client({ server }) {
     const [json, setJson] = useState<string>();
     const [action, setAction] = useState<string>();
     const [cookie, setCookie] = useState<string>();
@@ -12,20 +14,26 @@ export default function Client({ server }) {
     useEffect(() => {
         console.log('Fetch');
 
-        fetch('/test', { method: 'POST', body: 'Hello from frontend!' })
-            .then((res) => res.json())
-            .then(setJson)
-            .catch((err) => err.toString());
+        void (async () => {
+            try {
+                const res = await fetch('/test', { method: 'POST', body: 'Hello from frontend!' });
+                setJson(await res.json());
+                // after the route handler set its cookies
+                setCookie(document.cookie);
+            } catch (err) {
+                console.error(err);
+            }
+        })();
     }, []);
 
     useEffect(() => {
-        getFromServer()
-            .then(setAction)
-            .catch((err) => err.toString());
-    }, []);
-
-    useEffect(() => {
-        setCookie(document.cookie);
+        void (async () => {
+            try {
+                setAction(await getFromServer());
+            } catch (err) {
+                console.error(err);
+            }
+        })();
     }, []);
 
     return (

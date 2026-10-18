@@ -12,7 +12,9 @@ asar: false
 files:
   - build
   - '.next/standalone/demo/**/*'
-  - '!.next/standalone/demo/node_modules/electron'
+  # hoisted workspace: Next.js traces dependencies next to the app folder, not into it
+  - '.next/standalone/node_modules/**/*'
+  - '!.next/standalone/node_modules/electron'
 
 mac:
   category: public.app-category.developer-tools

@@ -1,9 +1,9 @@
-import path from 'path';
-import { app, BrowserWindow, Menu, protocol, session, shell } from 'electron';
+import path from 'node:path';
+import { app, BrowserWindow, Menu, protocol, shell } from 'electron';
 import defaultMenu from 'electron-default-menu';
 import { createHandler } from 'next-electron-rsc';
 
-let mainWindow;
+let mainWindow: BrowserWindow | null = null;
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
@@ -27,7 +27,7 @@ const { createInterceptor, localhostUrl } = createHandler({
     turbo: true, // optional
 });
 
-let stopIntercept;
+let stopIntercept: (() => void) | undefined;
 
 // ⬆ Next.js handler ⬆
 
@@ -47,7 +47,7 @@ const createWindow = async () => {
 
     // ⬆ Next.js handler ⬆
 
-    mainWindow.once('ready-to-show', () => mainWindow.webContents.openDevTools());
+    mainWindow.once('ready-to-show', () => mainWindow?.webContents.openDevTools());
 
     mainWindow.on('closed', () => {
         mainWindow = null;
