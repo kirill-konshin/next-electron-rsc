@@ -25,7 +25,7 @@ async function createRequest({
 }: {
     socket: Socket;
     request: Request;
-    session: Session;
+    session?: Session;
 }): Promise<IncomingMessage> {
     const req = new IncomingMessage(socket);
 
@@ -39,30 +39,34 @@ async function createRequest({
         req.headers[key] = value;
     });
 
-    try {
-        // @see https://github.com/electron/electron/issues/39525#issue-1852825052
-        const cookies = await session.cookies.get({
-            url: request.url,
-            // domain: url.hostname,
-            // path: url.pathname,
-            // `secure: true` Cookies should not be sent via http
-            // secure: url.protocol === 'http:' ? false : undefined,
-            // theoretically not possible to implement sameSite because we don't know the url
-            // of the website that is requesting the resource
-        });
+    // Renderer requests leave cookies in the Electron session's jar; in-process fetches (no session) already carry
+    // the cookie header the caller forwarded, like any HTTP client.
+    if (session) {
+        try {
+            // @see https://github.com/electron/electron/issues/39525#issue-1852825052
+            const cookies = await session.cookies.get({
+                url: request.url,
+                // domain: url.hostname,
+                // path: url.pathname,
+                // `secure: true` Cookies should not be sent via http
+                // secure: url.protocol === 'http:' ? false : undefined,
+                // theoretically not possible to implement sameSite because we don't know the url
+                // of the website that is requesting the resource
+            });
 
-        if (cookies.length) {
-            const cookiesHeader = [];
+            if (cookies.length) {
+                const cookiesHeader = [];
 
-            for (const cookie of cookies) {
-                const { name, value, ...options } = cookie;
-                cookiesHeader.push(serializeCookie(name, value)); // ...(options as any)?
+                for (const cookie of cookies) {
+                    const { name, value, ...options } = cookie;
+                    cookiesHeader.push(serializeCookie(name, value)); // ...(options as any)?
+                }
+
+                req.headers.cookie = cookiesHeader.join('; ');
             }
-
-            req.headers.cookie = cookiesHeader.join('; ');
+        } catch (e) {
+            throw new Error('Failed to parse cookies', { cause: e });
         }
-    } catch (e) {
-        throw new Error('Failed to parse cookies', { cause: e });
     }
 
     if (request.body) {
@@ -82,27 +86,40 @@ class ReadableServerResponse extends ServerResponse {
         super(req);
 
         this.responsePromise = new Promise<Response>((resolve, reject) => {
+            // Closed by `end()`, or by the consumer cancelling (navigation, aborted fetch) like a dropped connection.
+            let isClosed = false;
+
             const readableStream = new ReadableStream({
                 start: (controller) => {
-                    let onData;
+                    // `Response` bodies accept only bytes: `end()` often comes without a chunk (or with a callback),
+                    // and Node allows string chunks with an encoding.
+                    const onData = (chunk: unknown, encoding?: BufferEncoding) => {
+                        if (isClosed) return;
+                        const bytes =
+                            typeof chunk === 'string'
+                                ? Buffer.from(chunk, encoding)
+                                : chunk instanceof Uint8Array
+                                  ? chunk
+                                  : undefined;
+                        if (bytes?.length) controller.enqueue(bytes);
+                    };
 
-                    this.on(
-                        'data',
-                        (onData = (chunk) => {
-                            controller.enqueue(chunk);
-                        }),
-                    );
+                    this.on('data', onData);
 
-                    this.once('end', (chunk) => {
-                        controller.enqueue(chunk);
-                        controller.close();
+                    this.once('end', (chunk: unknown, encoding?: BufferEncoding) => {
+                        onData(chunk, encoding);
                         this.off('data', onData);
+                        if (isClosed) return;
+                        isClosed = true;
+                        controller.close();
                     });
                 },
                 pull: (controller) => {
                     this.emit('drain');
                 },
-                cancel: () => {},
+                cancel: () => {
+                    isClosed = true;
+                },
             });
 
             this.once('writeHead', (statusCode) => {
@@ -118,12 +135,13 @@ class ReadableServerResponse extends ServerResponse {
     }
 
     write(chunk: any, ...args): boolean {
-        this.emit('data', chunk);
+        // A write after `end()` has nowhere to go; Node reports it through `super.write` as usual.
+        if (!this.writableEnded) this.emit('data', chunk, typeof args[0] === 'string' ? args[0] : undefined);
         return super.write(chunk, ...args);
     }
 
-    end(chunk: any, ...args): this {
-        this.emit('end', chunk);
+    end(chunk?: any, ...args): this {
+        if (!this.writableEnded) this.emit('end', chunk, typeof args[0] === 'string' ? args[0] : undefined);
         return super.end(chunk, ...args);
     }
 
@@ -134,6 +152,47 @@ class ReadableServerResponse extends ServerResponse {
 
     getResponse() {
         return this.responsePromise;
+    }
+}
+
+/** Mirrors a browser cookie jar: `Set-Cookie` from a response goes into the Electron session. */
+async function storeCookies(session: Session, url: string, response: Response): Promise<void> {
+    try {
+        // @see https://github.com/electron/electron/issues/30717
+        // @see https://github.com/electron/electron/issues/39525
+        const cookies = parseCookie(
+            response.headers.getSetCookie().reduce((r, c) => {
+                // @see https://github.com/nfriedly/set-cookie-parser?tab=readme-ov-file#usage-in-react-native-and-with-some-other-fetch-implementations
+                return [...r, ...splitCookiesString(c)];
+            }, []),
+        );
+
+        for (const cookie of cookies) {
+            const { name, value, path, domain, secure, httpOnly, expires, maxAge } = cookie;
+
+            // Max-Age wins over Expires (RFC 6265 5.3), and `Max-Age=0` deletes, so 0 is not "absent".
+            const expiresAtMs = maxAge !== undefined ? Date.now() + maxAge * 1000 : expires?.getTime();
+
+            if (expiresAtMs !== undefined && expiresAtMs <= Date.now()) {
+                await session.cookies.remove(url, cookie.name);
+                continue;
+            }
+
+            await session.cookies.set({
+                url,
+                // Electron takes seconds since the UNIX epoch; undefined keeps it a session cookie.
+                expirationDate: expiresAtMs === undefined ? undefined : expiresAtMs / 1000,
+                name,
+                value,
+                path,
+                domain,
+                secure,
+                httpOnly,
+                maxAge,
+            } as any);
+        }
+    } catch (e) {
+        throw new Error('Failed to set cookies', { cause: e });
     }
 }
 
@@ -181,6 +240,10 @@ export function createHandler({
     };
 
     if (dev) {
+        // `next dev` forks `start-server` with this flag (next/dist/cli/next-dev.js); in-process nothing sets it, and
+        // since Next.js 16 route modules read it at construction (next/dist/server/route-modules/route-module.js) to
+        // tell development from a build, otherwise they load `required-server-files.json` from the dev dist dir.
+        process.env.__NEXT_DEV_SERVER = '1';
         //FIXME Closes window when restarting server
         const server = require(resolve.sync('next/dist/server/lib/start-server', { basedir: dir }));
         const preparePromise = server.startServer(serverOptions);
@@ -218,6 +281,19 @@ export function createHandler({
             },
         };
     }
+
+    // Next.js fetches its own origin from the server, e.g. the page a Server Action redirects to. Over HTTP that
+    // reaches the same server; here there is no TCP port, so requests to `localhostUrl` are served in-process once
+    // the interceptor runs, and everything else passes through. Installed before `next()`, so Next.js layers its
+    // own fetch patch (cache, dedupe) over this one exactly as it would over the native fetch.
+    let serveOwnOrigin: ((request: Request) => Promise<Response>) | undefined;
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = input instanceof Request ? input.url : String(input);
+        if (!serveOwnOrigin || !url.startsWith(`${localhostUrl}/`)) return originalFetch(input, init);
+        if (debug) console.log('[NEXT] In-process fetch', url);
+        return serveOwnOrigin(new Request(input, init));
+    }) as typeof fetch;
 
     const next = require(resolve.sync('next', { basedir: dir }));
 
@@ -260,57 +336,24 @@ export function createHandler({
 
         await preparePromise;
 
+        const serve = async (request: Request, session?: Session): Promise<Response> => {
+            const req = await createRequest({ socket, request, session });
+            const res = new ReadableServerResponse(req);
+
+            handler(req, res, parse(req.url, true)); //TODO Try/catch?
+
+            const response = await res.getResponse();
+            if (session) await storeCookies(session, request.url, response);
+            return response;
+        };
+
+        serveOwnOrigin = (request) => serve(request);
+
         protocol.handle('http', async (request) => {
             try {
                 assert(request.url.startsWith(localhostUrl), 'External HTTP not supported, use HTTPS');
 
-                const req = await createRequest({ socket, request, session });
-                const res = new ReadableServerResponse(req);
-                const url = parse(req.url, true);
-
-                handler(req, res, url); //TODO Try/catch?
-
-                const response = await res.getResponse();
-
-                try {
-                    // @see https://github.com/electron/electron/issues/30717
-                    // @see https://github.com/electron/electron/issues/39525
-                    const cookies = parseCookie(
-                        response.headers.getSetCookie().reduce((r, c) => {
-                            // @see https://github.com/nfriedly/set-cookie-parser?tab=readme-ov-file#usage-in-react-native-and-with-some-other-fetch-implementations
-                            return [...r, ...splitCookiesString(c)];
-                        }, []),
-                    );
-
-                    for (const cookie of cookies) {
-                        const { name, value, path, domain, secure, httpOnly, expires, maxAge } = cookie;
-
-                        const expirationDate = expires
-                            ? expires.getTime()
-                            : maxAge
-                              ? Date.now() + maxAge * 1000
-                              : undefined;
-
-                        if (expirationDate < Date.now()) {
-                            await session.cookies.remove(request.url, cookie.name);
-                            continue;
-                        }
-
-                        await session.cookies.set({
-                            url: request.url,
-                            expirationDate,
-                            name,
-                            value,
-                            path,
-                            domain,
-                            secure,
-                            httpOnly,
-                            maxAge,
-                        } as any);
-                    }
-                } catch (e) {
-                    throw new Error('Failed to set cookies', { cause: e });
-                }
+                const response = await serve(request, session);
 
                 if (debug) console.log('[NEXT] Handler', request.url, response.status);
                 return response;
@@ -321,6 +364,7 @@ export function createHandler({
         });
 
         return function stopIntercept() {
+            serveOwnOrigin = undefined;
             protocol.unhandle('http');
             process.off('SIGTERM', closeSocket);
             process.off('SIGINT', closeSocket);
